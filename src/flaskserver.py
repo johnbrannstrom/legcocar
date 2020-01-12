@@ -14,8 +14,12 @@ This modules is a flask web server.
 import argparse
 
 # Third party modules
+import curio
 from flask import Flask, render_template, request
-
+from bricknil import attach, start
+from bricknil.hub import CPlusHub
+from bricknil.sensor.motor import CPlusXLMotor
+from bricknil.sensor.motor import CPlusLargeMotor
 
 class RequestHandler:
     """Flask web server."""
@@ -47,10 +51,11 @@ class RequestHandler:
 
         """
         args = RequestHandler._get_request_arguments()
-        if request.path == '/':
+        if request.path == '':
             return render_template('index.html')
-        elif request.path == '/post.html':
-            return render_template('post.html')
+        # TODO delete, only for test
+        elif request.path == '/api/test' and request.method == 'POST':
+            return render_template('index.html')
 
 
 class Main:
@@ -90,12 +95,14 @@ class Main:
 
 web_server = Flask(__name__,
                    static_url_path="",
-                   static_folder='html_static',
-                   template_folder='html_templates')
+                   static_folder='/srv/legcocar/html_static',
+                   template_folder='/srv/legcocar/html_templates')
+web_server.strict_slashes = False
 
 
-@web_server.route('/')
+@web_server.route('/', methods=['GET'])
 @web_server.route('/index.html', methods=['GET'])
+@web_server.route('/api/test', methods=['POST'])
 def index():
     """
     Handle incoming HTTP requests.

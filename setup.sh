@@ -25,7 +25,7 @@ APT_PACKAGES=(\
 "uuid-dev=2.33.1-0.1" \
 "python3-pip=18.1-5+rpt1" \
 "apache2=2.4.38-3+deb10u3" \
-"libapache2-mod-wsgi=4.6.5-1"
+"libapache2-mod-wsgi-py3=4.6.5-1"
 )
 
 # List of packages to install with pip3
