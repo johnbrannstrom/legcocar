@@ -92,9 +92,10 @@ class RequestHandler:
             if path == '/':
                 response = render_template('index.html')
             elif path == '/api/run_motor' and request.method == 'POST':
-                # Send message to to RabbitMQ
+                # TODO enter error check for command here
                 args['command'] = 'run_motor'
                 body = json.dumps(args)
+                # Send message to to RabbitMQ
                 channel.basic_publish(exchange='',
                                       routing_key='to_lego',
                                       body=body)
