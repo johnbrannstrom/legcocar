@@ -11,8 +11,14 @@ This module controls a car vis the LEGO control+ Bluetooth interface.
 
 """
 
+# Built in modules
 import logging
-from curio import sleep
+from threading import Thread
+import time
+
+# Third party modules
+import pika
+from curio import sleep, UniversalQueue
 from bricknil import attach, start
 from bricknil.hub import CPlusHub
 from bricknil.sensor.motor import CPlusXLMotor
@@ -27,6 +33,13 @@ class Truck(CPlusHub):
 
     async def run(self):
         self.message_info("Running")
+
+        while True:
+            self.message_info("looping")
+            method_frame, header_frame, body = (
+                channel.basic_get(queue='to_lego'))
+            print(str(body))
+            await sleep(0.1)
 
         # await self.motor.ramp_speed(80, 5000)
 
@@ -59,17 +72,29 @@ class Truck(CPlusHub):
         pass
 
 
+# def get_one_rabbitmq_message():
+#     while True:
+#         method_frame, header_frame, body = channel.basic_get(queue='to_lego')
+#         if method_frame is not None:
+#             print(str(body))
+#             return body
+#         time.sleep(0.5)
+
+
 async def system():
     hub = Truck(name='hub1',
                 query_port_info=True,
                 ble_id="90:84:2B:4D:03:F7")
-    # hub = Truck('hub1', True, ble_id="4A:42:1A:27:06:94")
-    # hub = Truck('hub1', True, ble_id="50:D2:9D:10:B1:F6")
-    # hub = Truck(name='hub1',
-    #             query_port_info=True,
-    #             ble_id="00001624-1212-efde-1623-785feabcd123")
-    # hub = Truck('hub1', True)
 
 if __name__ == '__main__':
+    # connect to
+    connection = pika.BlockingConnection(
+        pika.ConnectionParameters(host='localhost'))
+    channel = connection.channel()
+    channel.queue_declare(queue='to_lego')
+
     logging.basicConfig(level=logging.INFO)
     start(system)
+
+    channel.close()
+    connection.close()

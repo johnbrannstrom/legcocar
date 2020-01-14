@@ -25,13 +25,17 @@ APT_PACKAGES=(\
 "uuid-dev=2.33.1-0.1" \
 "python3-pip=18.1-5+rpt1" \
 "apache2=2.4.38-3+deb10u3" \
-"libapache2-mod-wsgi-py3=4.6.5-1"
+"libapache2-mod-wsgi-py3=4.6.5-1" \
+"rabbitmq-server=3.7.8-4" \
+"supervisor=3.3.5-1"
 )
 
 # List of packages to install with pip3
 PIP3_PACKAGES=(\
 "bricknil==0.9.3" \
-"flask==1.1.1"
+"flask==1.1.1" \
+"pika==1.1.0" \
+"aio_pika==6.4.1"
 )
 
 # Current location compared to script location
@@ -51,22 +55,26 @@ run_echo () {
   fi
 }
 
+# TODO is supervisor used?
+# Create supervisor log dir
+run_echo "mkdir -p /var/log/supervisor"
+
 # Set bash_aliases for root
 sed -i "/alias ls='ls -lah --color=auto'/d" /root/.bashrc
 run_echo "echo \"alias ls='ls -lah --color=auto'\" >> /root/.bashrc"
-
-# Install packages with apt
-run_echo "apt-get update"
-for PACKAGE in "${APT_PACKAGES[@]}"
-do
-  run_echo "apt-get -y install ${PACKAGE}"
-done
-
-# Install packages with pip3
-for PACKAGE in "${PIP3_PACKAGES[@]}"
-do
-  run_echo "pip3 install ${PACKAGE}"
-done
+# TODO uncomment
+## Install packages with apt
+#run_echo "apt-get update"
+#for PACKAGE in "${APT_PACKAGES[@]}"
+#do
+#  run_echo "apt-get -y install ${PACKAGE}"
+#done
+#
+## Install packages with pip3
+#for PACKAGE in "${PIP3_PACKAGES[@]}"
+#do
+#  run_echo "pip3 install ${PACKAGE}"
+#done
 
 # Create project user
 run_echo "useradd -m ${PROJECT}"
@@ -88,3 +96,20 @@ run_echo "chmod 755 /srv/${PROJECT}"
 
 # Restart apache2 for settings to take affect
 run_echo "service apache2 restart"
+
+# Create rabbitMQ .erlang.cookie
+ERLANG_COOKIE="HEIQLGKPYPKGHVQFRPRF"
+run_echo "echo -n ${ERLANG_COOKIE} > /var/lib/rabbitmq/.erlang.cookie"
+run_echo "chown rabbitmq.rabbitmq /var/lib/rabbitmq/.erlang.cookie"
+run_echo "chmod 400 /var/lib/rabbitmq/.erlang.cookie"
+
+# /etc/rabbitmq/enabled_plugins
+run_echo "echo '[rabbitmq_management].' > /etc/rabbitmq/enabled_plugins"
+run_echo "chown rabbitmq.rabbitmq /etc/rabbitmq/enabled_plugins"
+
+# Create RabbitMQ project user
+run_echo "rabbitmqctl add_user ${PROJECT} ${PROJECT}"
+run_echo "rabbitmqctl set_user_tags ${PROJECT} administrator"
+# TODO uncomment
+# Restart RabbitMQ server
+#run_echo "service rabbitmq-server restart"

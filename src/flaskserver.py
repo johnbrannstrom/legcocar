@@ -12,15 +12,15 @@ This modules is a flask web server.
 
 # Built in modules
 import argparse
+import json
+import traceback
 
 # Third party modules
-import curio
-from flask import Flask, render_template, request
-from bricknil import attach, start
-from bricknil.hub import CPlusHub
-from bricknil.sensor.motor import CPlusXLMotor
-from bricknil.sensor.motor import CPlusLargeMotor
+from flask import Flask, render_template, request, Response
+import pika
 
+
+# noinspection PyTypeChecker,PyBroadException
 class RequestHandler:
     """Flask web server."""
 
@@ -45,17 +45,118 @@ class RequestHandler:
                 args[key] = request.args.getlist(key)
         return args
 
+    @staticmethod
+    def _json_response(message, status_code, result=None):
+        """
+        Create a json HTTP response.
+        :param str message:     Text message.
+        :param int status_code: HTTP status code.
+        :param json result:     If the response should contain information this
+                                should be set.
+        :rtype: Json
+        :return: Json HTTP response
+        """
+        data = {
+            'status': status_code,
+            'message': message
+        }
+        if result is not None:
+            data['result'] = result
+        json_message = json.dumps(data)
+        return Response(
+            json_message, status=status_code, mimetype='application/json')
+
+    # noinspection PyUnboundLocalVariable
     def handle_request(self):
         """
         Handle a HTTP request.
 
         """
-        args = RequestHandler._get_request_arguments()
-        if request.path == '':
-            return render_template('index.html')
-        # TODO delete, only for test
-        elif request.path == '/api/test' and request.method == 'POST':
-            return render_template('index.html')
+        args = self._get_request_arguments()
+        path = request.path
+        content_type = request.content_type
+        try:
+            if path.startswith('/api/'):
+                # Connect to RabbitMQ if request is an API request
+                connection = pika.BlockingConnection(
+                    pika.ConnectionParameters('localhost'))
+                channel = connection.channel()
+                channel.queue_declare(queue='to_lego')
+            if (path.startswith('/api/') and
+                    not content_type.startswith('application/json')):
+                raise HttpRequestContentTypeError(
+                    path=path,
+                    content_type=content_type,
+                    wanted_type='application/json')
+            # Handle requests
+            if path == '/':
+                response = render_template('index.html')
+            elif path == '/api/run_motor' and request.method == 'POST':
+                # Send message to to RabbitMQ
+                args['command'] = 'run_motor'
+                body = json.dumps(args)
+                channel.basic_publish(exchange='',
+                                      routing_key='to_lego',
+                                      body=body)
+                message = "Speed set to '{}'".format(args['speed'])
+                response = self._json_response(message=message,
+                                               status_code=200)
+            # Close connection to RabbitMQ if request is an API request
+            if path.startswith('/api/'):
+                channel.close()
+                connection.close()
+            return response
+        except BaseException:
+            traceback_message = traceback.format_exc()
+            return self._json_response(message=traceback_message,
+                                       status_code=500)
+
+
+class HttpRequestError(Exception):
+    """Error for malformed HTTP requests."""
+
+    # noinspection PyUnresolvedReferences
+    def __str__(self):
+        """
+        String representation function.
+
+        """
+        return self._message
+
+
+# noinspection PyShadowingNames
+class HttpRequestContentTypeError(HttpRequestError):
+    """Error for malformed HTTP requests."""
+
+    def __init__(self, path: str, content_type: str, wanted_type: str):
+        """
+        Constructor function.
+
+        :param path: Target path that caused the error.
+        :param content_type: Target content type that caused the error.
+        :param wanted_type:  Wanted content type.
+
+        """
+        message = ("Invalid content type '{content_type}' HTTP request "
+                   "'{path}'. Wanted type is '{wanted_type}'")
+        self._message = message.format(path=path,
+                                       content_type=content_type,
+                                       wanted_type=wanted_type)
+
+# TODO delete?
+# # noinspection PyShadowingNames
+# class HttpRequestJsonError(HttpRequestError):
+#     """Error for malformed HTTP requests."""
+#
+#     def __init__(self, path: str, json: json):
+#         """
+#         Constructor function.
+#
+#         :param path: Target path that caused the error.
+#         :param json: Target json that caused the error.
+#         """
+#         message = "Malformed json in '{json}' HTTP request: '{path}'"
+#         self._message = message.format(json=str(json), path=path)
 
 
 class Main:
@@ -102,7 +203,7 @@ web_server.strict_slashes = False
 
 @web_server.route('/', methods=['GET'])
 @web_server.route('/index.html', methods=['GET'])
-@web_server.route('/api/test', methods=['POST'])
+@web_server.route('/api/run_motor', methods=['POST'])
 def index():
     """
     Handle incoming HTTP requests.
