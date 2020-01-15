@@ -25,6 +25,18 @@ class RequestHandler:
     """Flask web server."""
 
     @staticmethod
+    def _validate_arguments(path: str, args: dict):
+        """
+        Check that only valid arguments are passed to request.
+
+        :param path: HTTP request path.
+        :param args: HTTP request arguments.
+        :raises: HttpRequestError
+
+        """
+        if
+
+    @staticmethod
     def _get_request_arguments():
         """
         Parse request arguments
@@ -92,7 +104,7 @@ class RequestHandler:
             if path == '/':
                 response = render_template('index.html')
             elif path == '/api/run_motor' and request.method == 'POST':
-                # TODO enter error check for command here
+                self._validate_arguments(path=path, args=args)
                 args['command'] = 'run_motor'
                 body = json.dumps(args)
                 # Send message to to RabbitMQ
@@ -138,26 +150,43 @@ class HttpRequestContentTypeError(HttpRequestError):
         :param wanted_type:  Wanted content type.
 
         """
-        message = ("Invalid content type '{content_type}' HTTP request "
+        message = ("Invalid content type '{content_type}' in HTTP request "
                    "'{path}'. Wanted type is '{wanted_type}'")
         self._message = message.format(path=path,
                                        content_type=content_type,
                                        wanted_type=wanted_type)
 
-# TODO delete?
-# # noinspection PyShadowingNames
-# class HttpRequestJsonError(HttpRequestError):
-#     """Error for malformed HTTP requests."""
-#
-#     def __init__(self, path: str, json: json):
-#         """
-#         Constructor function.
-#
-#         :param path: Target path that caused the error.
-#         :param json: Target json that caused the error.
-#         """
-#         message = "Malformed json in '{json}' HTTP request: '{path}'"
-#         self._message = message.format(json=str(json), path=path)
+
+class HttpRequestMissingArgumentsError(HttpRequestError):
+    """Error for malformed HTTP requests."""
+
+    def __init__(self, path: str, args: list):
+        """
+        Constructor function.
+
+        :param path: Target path that caused the error.
+        :param args: List of missing arguments.
+
+        """
+        message = ("Missing arguments in HTTP request '{}'. The following argu"
+                   "ments are missing: {args}")
+        self._message = message.format(path=path, args=', '.join(args))
+
+
+class HttpRequestInvalidArgumentError(HttpRequestError):
+    """Error for malformed HTTP requests."""
+
+    def __init__(self, path: str, args: list):
+        """
+        Constructor function.
+
+        :param path: Target path that caused the error.
+        :param args: List of invalid arguments.
+
+        """
+        message = ("Invalid arguments in HTTP request '{}'. The following argu"
+                   "ments are invalid: {args}")
+        self._message = message.format(path=path, args=', '.join(args))
 
 
 class Main:
