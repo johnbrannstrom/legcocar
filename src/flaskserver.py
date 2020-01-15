@@ -66,6 +66,39 @@ class RequestHandler:
         return Response(
             json_message, status=status_code, mimetype='application/json')
 
+    # noinspection PySimplifyBooleanCheck
+    @staticmethod
+    def _validate_arguments(path: str, args: dict, mandatory_args: dict,
+                            optional_args: dict):
+        """
+        Check that only valid arguments are passed to request.
+
+        :param path:           HTTP request path.
+        :param args:           HTTP request arguments.
+        :param mandatory_args: Dictionary with the name and type of all
+                               mandatory arguments.
+        :param optional_args:  Dictionary with the name and type of all
+                               mandatory arguments.
+        :raises: HttpRequestError
+
+        """
+        all_args = {**mandatory_args, **optional_args}
+        # Look for missing arguments
+        missing_args = [i for i in mandatory_args.keys()
+                        if i not in args.keys()]
+
+        if missing_args != []:
+            raise HttpRequestMissingArgumentError(
+                args=missing_args, path=path)
+        # Look for invalid arguments
+        invalid_args = [
+            i for i in args.keys() if i not in all_args.keys()]
+        if invalid_args != []:
+            raise HttpRequestInvalidArgumentError(
+                args=invalid_args, path=path)
+        # Look for arguments with wrong type
+
+
     def handle_request(self):
         """
         Handle a HTTP request.
@@ -91,7 +124,12 @@ class RequestHandler:
             if path == '/':
                 response = render_template('index.html')
             elif path == '/api/run_motor' and request.method == 'POST':
-                self._validate_arguments(path=path, args=args)
+                mandatory_args = {'hub': 'str', 'id': 'str', 'speed': 'int'}
+                optional_args = {}
+                self._validate_arguments(path=path,
+                                         args=args,
+                                         mandatory_args=mandatory_args,
+                                         optional_args=optional_args)
                 args['command'] = 'run_motor'
                 body = json.dumps(args)
                 # Send message to to RabbitMQ
@@ -106,44 +144,13 @@ class RequestHandler:
                 channel.close()
                 connection.close()
             return response
+        except HttpRequestError as e:
+            return self._json_response(message=str(e),
+                                       status_code=400)
         except BaseException:
             traceback_message = traceback.format_exc()
             return self._json_response(message=traceback_message,
                                        status_code=500)
-
-    # noinspection PyUnboundLocalVariable,PySimplifyBooleanCheck
-    @staticmethod
-    def _validate_arguments(path: str, args: dict):
-        """
-        Check that only valid arguments are passed to request.
-
-        :param path: HTTP request path.
-        :param args: HTTP request arguments.
-        :raises: HttpRequestError
-
-        """
-        if path.startswith('/api/'):
-            mandatory_args = {'hub': 'str', 'id': 'str'}
-            optional_args = {}
-
-            all_args = mandatory_args.update(optional_args)
-            # Look for missing arguments
-            missing_args = [i for i in mandatory_args.keys()
-                            if i not in args.keys()]
-            if missing_args != []:
-                raise HttpRequestMissingArgumentError(
-                    args=missing_args, path=path)
-            # Look for invalid arguments
-            invalid_args = [
-                i for i in args.keys() if i not in all_args.keys()]
-            if invalid_args != []:
-                raise HttpRequestInvalidArgumentError(
-                    args=invalid_args, path=path)
-
-
-        if path == '/api/run_motor':
-            mandatory_args = {'speed': 'int'}
-            optional_args = {}
 
 
 class HttpRequestError(Exception):
@@ -189,8 +196,9 @@ class HttpRequestMissingArgumentError(HttpRequestError):
         :param args: List of missing arguments.
 
         """
-        message = ("Missing arguments in HTTP request '{}'. The following argu"
-                   "ments are missing: {args}")
+        message = ("Missing arguments in HTTP request '{path}'. The following "
+                   "arguments are missing: {args}")
+        print(args) # TODO del
         self._message = message.format(path=path, args=', '.join(args))
 
 
@@ -205,8 +213,8 @@ class HttpRequestInvalidArgumentError(HttpRequestError):
         :param args: List of invalid arguments.
 
         """
-        message = ("Invalid arguments in HTTP request '{}'. The following argu"
-                   "ments are invalid: {args}")
+        message = ("Invalid arguments in HTTP request '{path}'. The following "
+                   "arguments are invalid: {args}")
         self._message = message.format(path=path, args=', '.join(args))
 
 
