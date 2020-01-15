@@ -25,18 +25,6 @@ class RequestHandler:
     """Flask web server."""
 
     @staticmethod
-    def _validate_arguments(path: str, args: dict):
-        """
-        Check that only valid arguments are passed to request.
-
-        :param path: HTTP request path.
-        :param args: HTTP request arguments.
-        :raises: HttpRequestError
-
-        """
-        if
-
-    @staticmethod
     def _get_request_arguments():
         """
         Parse request arguments
@@ -78,7 +66,6 @@ class RequestHandler:
         return Response(
             json_message, status=status_code, mimetype='application/json')
 
-    # noinspection PyUnboundLocalVariable
     def handle_request(self):
         """
         Handle a HTTP request.
@@ -124,6 +111,40 @@ class RequestHandler:
             return self._json_response(message=traceback_message,
                                        status_code=500)
 
+    # noinspection PyUnboundLocalVariable,PySimplifyBooleanCheck
+    @staticmethod
+    def _validate_arguments(path: str, args: dict):
+        """
+        Check that only valid arguments are passed to request.
+
+        :param path: HTTP request path.
+        :param args: HTTP request arguments.
+        :raises: HttpRequestError
+
+        """
+        if path.startswith('/api/'):
+            mandatory_args = {'hub': 'str', 'id': 'str'}
+            optional_args = {}
+
+            all_args = mandatory_args.update(optional_args)
+            # Look for missing arguments
+            missing_args = [i for i in mandatory_args.keys()
+                            if i not in args.keys()]
+            if missing_args != []:
+                raise HttpRequestMissingArgumentError(
+                    args=missing_args, path=path)
+            # Look for invalid arguments
+            invalid_args = [
+                i for i in args.keys() if i not in all_args.keys()]
+            if invalid_args != []:
+                raise HttpRequestInvalidArgumentError(
+                    args=invalid_args, path=path)
+
+
+        if path == '/api/run_motor':
+            mandatory_args = {'speed': 'int'}
+            optional_args = {}
+
 
 class HttpRequestError(Exception):
     """Error for malformed HTTP requests."""
@@ -157,7 +178,7 @@ class HttpRequestContentTypeError(HttpRequestError):
                                        wanted_type=wanted_type)
 
 
-class HttpRequestMissingArgumentsError(HttpRequestError):
+class HttpRequestMissingArgumentError(HttpRequestError):
     """Error for malformed HTTP requests."""
 
     def __init__(self, path: str, args: list):
