@@ -217,6 +217,22 @@ class HttpRequestInvalidArgumentError(HttpRequestError):
                    "arguments are invalid: {args}")
         self._message = message.format(path=path, args=', '.join(args))
 
+class HttpRequestArgumentTypeError(HttpRequestError):
+    """Error for malformed HTTP requests."""
+
+    def __init__(self, path: str, arg: str, arg_type: str, type):
+        """
+        Constructor function.
+
+        :param path: Target path that caused the error.
+        :param arg:  Argument that caused the error.
+        :param arg_type:
+
+        """
+        message = ("Invalid arguments in HTTP request '{path}'. The following "
+                   "arguments are invalid: {args}")
+        self._message = message.format(path=path, args=', '.join(args))
+
 
 class Main:
     """Contains the script"""
