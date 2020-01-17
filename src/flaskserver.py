@@ -97,7 +97,29 @@ class RequestHandler:
             raise HttpRequestInvalidArgumentError(
                 args=invalid_args, path=path)
         # Look for arguments with wrong type
-
+        for arg, type_ in all_args.items():
+            value = args[arg]
+            type_error = False
+            # Verify string type parameters
+            if type_ == 'str' and not type(value) == str:
+                type_error = True
+            # Verify int type parameters
+            elif type_ == 'int' and not type(value) == int:
+                type_error = True
+            # Verify list type parameters
+            elif type_ == 'list' and not type(value) == list:
+                type_error = True
+            # Verify bool type parameters
+            elif type_ == 'bool' and not type(value) == bool:
+                type_error = True
+            # Verify dict type parameters
+            elif type_ == 'dict' and not type(value) == dict:
+                type_error = True
+            # If we found a type error, raise it
+            if type_error:
+                raise HttpRequestArgumentTypeError(
+                    path=path, arg=arg, arg_type=all_args[arg],
+                    value=value)
 
     def handle_request(self):
         """
@@ -123,14 +145,14 @@ class RequestHandler:
             # Handle requests
             if path == '/':
                 response = render_template('index.html')
-            elif path == '/api/run_motor' and request.method == 'POST':
+            elif path == '/api/drive' and request.method == 'POST':
                 mandatory_args = {'hub': 'str', 'id': 'str', 'speed': 'int'}
                 optional_args = {}
                 self._validate_arguments(path=path,
                                          args=args,
                                          mandatory_args=mandatory_args,
                                          optional_args=optional_args)
-                args['command'] = 'run_motor'
+                args['command'] = 'drive'
                 body = json.dumps(args)
                 # Send message to to RabbitMQ
                 channel.basic_publish(exchange='',
@@ -198,7 +220,6 @@ class HttpRequestMissingArgumentError(HttpRequestError):
         """
         message = ("Missing arguments in HTTP request '{path}'. The following "
                    "arguments are missing: {args}")
-        print(args) # TODO del
         self._message = message.format(path=path, args=', '.join(args))
 
 
@@ -217,21 +238,24 @@ class HttpRequestInvalidArgumentError(HttpRequestError):
                    "arguments are invalid: {args}")
         self._message = message.format(path=path, args=', '.join(args))
 
+
 class HttpRequestArgumentTypeError(HttpRequestError):
     """Error for malformed HTTP requests."""
 
-    def __init__(self, path: str, arg: str, arg_type: str, type):
+    def __init__(self, path: str, arg: str, arg_type: str, value):
         """
         Constructor function.
 
-        :param path: Target path that caused the error.
-        :param arg:  Argument that caused the error.
-        :param arg_type:
+        :param path:     Path when the error was risen.
+        :param arg:      Argument that caused the error.
+        :param arg_type: Target argument type.
+        :param value:    Type that caused the error.
 
         """
-        message = ("Invalid arguments in HTTP request '{path}'. The following "
-                   "arguments are invalid: {args}")
-        self._message = message.format(path=path, args=', '.join(args))
+        message = ("Invalid arguments in HTTP request '{path}'. Argument '{arg"
+                   "}' has invalid {arg_type} value {value}")
+        self._message = message.format(path=path, arg=arg, arg_type=arg_type,
+                                       value=value)
 
 
 class Main:
@@ -278,7 +302,7 @@ web_server.strict_slashes = False
 
 @web_server.route('/', methods=['GET'])
 @web_server.route('/index.html', methods=['GET'])
-@web_server.route('/api/run_motor', methods=['POST'])
+@web_server.route('/api/drive', methods=['POST'])
 def index():
     """
     Handle incoming HTTP requests.

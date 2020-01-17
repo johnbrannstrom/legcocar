@@ -1,6 +1,3 @@
 put initial_setup.sh
 put setup.sh
-put -r src
-put -r html_static
-put -r html_templates
-put -r other
+put -r *

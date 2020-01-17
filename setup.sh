@@ -27,7 +27,8 @@ APT_PACKAGES=(\
 "apache2=2.4.38-3+deb10u3" \
 "libapache2-mod-wsgi-py3=4.6.5-1" \
 "rabbitmq-server=3.7.8-4" \
-"supervisor=3.3.5-1"
+"supervisor=3.3.5-1" \
+"bleak==0.5.1"
 )
 
 # List of packages to install with pip3
@@ -55,7 +56,6 @@ run_echo () {
   fi
 }
 
-# TODO is supervisor used?
 # Create supervisor log dir
 run_echo "mkdir -p /var/log/supervisor"
 
@@ -84,6 +84,10 @@ rm -Rf /srv/flask_wsgi
 rm -Rf /srv/${PROJECT}
 run_echo 'mkdir /srv/flask_wsgi'
 run_echo "mkdir /srv/${PROJECT}"
+run_echo "mkdir -p /var/log/${PROJECT}"
+run_echo "chown -R ${PROJECT}:${PROJECT} /var/log/${PROJECT}"
+run_echo "chmod 755 /var/log/${PROJECT}"
+run_echo "mv ${DIR}/other/legcocar_template.conf /srv/${PROJECT}/"
 run_echo "mv ${DIR}/html_static /srv/${PROJECT}/"
 run_echo "mv ${DIR}/html_templates /srv/${PROJECT}/"
 run_echo "mv ${DIR}/src/flaskserver.py /srv/${PROJECT}/"
