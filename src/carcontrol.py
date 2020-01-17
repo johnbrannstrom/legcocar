@@ -20,6 +20,7 @@ import traceback
 # Third party modules
 import pika
 import bleak
+import curio
 from curio import sleep
 from bricknil import attach, start
 from bricknil.hub import CPlusHub
@@ -27,7 +28,7 @@ from bricknil.sensor.motor import CPlusXLMotor
 
 # Local modules
 from settings import Settings
-from logfile import LogFile
+from commonlib import create_logger
 
 # Status on connection to LEGO via Bluetooth
 connected_to_Lego = False
@@ -102,32 +103,85 @@ async def system():
                 query_port_info=True,
                 ble_id="90:84:2B:4D:03:F7")
 
-if __name__ == '__main__':
-    # Read settings from YAML file
-    Settings.static_init()
-    Settings.load_settings_from_yaml()
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+"""
+.. moduleauthor:: John Brännström <john.brannstrom@gmail.com>
 
-    # Connect to log file
-    error_log = LogFile(file_name=Settings.ERROR_LOG,
-                        verbosity=Settings.LOG_VERBOSITY)
+Command line script.
+********************
 
-    # Connect to RabbitMQ
-    connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host='localhost'))
-    channel = connection.channel()
-    channel.queue_declare(queue='to_lego')
+This is a template for writing a script that accepts command line arguments.
 
-    logging.basicConfig(level=logging.INFO)
-    while not connected_to_Lego:
-        try:
+"""
+
+# Built in modules
+import argparse
+
+# Third party modules
+# TODO import modules here
+
+# Local modules
+# TODO import modules here
+
+
+class Main:
+    """Contains the script"""
+
+    @staticmethod
+    def _parse_command_line_options():
+        """
+        Parse options from the command line.
+
+        :rtype: Namespace
+        :returns: Command line arguments.
+
+        """
+        log_verbosity_help = 'Logging verbosity 0-60.'
+        description = 'Connects a LEGO Control+ Bluetooth hub to RabbitMQ.'
+        parser = argparse.ArgumentParser(description=description)
+        parser.add_argument('--log-verbosity', '-v', type=int,
+                            help=log_verbosity_help, required=False)
+        args = parser.parse_args()
+        return args
+
+    def run(self):
+        """
+        Run the script.
+
+        """
+        # Connect to log file
+        message_log = create_logger(log_file=Settings.MESSAGE_LOG,
+                                    level=logging.INFO, screen=False)
+        error_log = create_logger(log_file=Settings.ERROR_LOG,
+                                  level=60, screen=False)
+
+        # Read settings from YAML file
+        Settings.static_init()
+        Settings.load_settings_from_yaml()
+
+        # Parse command line oprions
+        args = self._parse_command_line_options()
+        if args.log_verbosity is not None:
+            Settings.LOG_VERBOSITY = args.log_verbosity
+
+        # Connect to RabbitMQ
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host='localhost'))
+        channel = connection.channel()
+        channel.queue_declare(queue='to_lego')
+
+        # Connect to LEGO Control+ hub
+        connected_to_lego = False
+        while not connected_to_lego:
             start(system)
-            connected_to_Lego = True
-        except bleak.exc.BleakError as e:
-            lines = [traceback.format_exc()]
-            error_log.write(lines=lines, level=0, date_time=True)
+            connected_to_lego = True
 
-    curio.errors.TaskError
+        # Close connection to RabbitMQ
+        channel.close()
+        connection.close()
 
-    # Close connection to RabbitMQ
-    channel.close()
-    connection.close()
+
+if __name__ == '__main__':
+    main = Main()
+    main.run()

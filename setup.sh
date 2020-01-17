@@ -35,8 +35,7 @@ APT_PACKAGES=(\
 PIP3_PACKAGES=(\
 "bricknil==0.9.3" \
 "flask==1.1.1" \
-"pika==1.1.0" \
-"aio_pika==6.4.1"
+"pika==1.1.0"
 )
 
 # Current location compared to script location
