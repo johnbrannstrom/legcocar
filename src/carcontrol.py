@@ -65,7 +65,7 @@ class Truck(CPlusHub):
                 print(body)
                 await self.drive1.set_speed(body['speed'])
                 await self.drive2.set_speed(body['speed'])
-                await sleep(20)
+                await sleep(2)
             await sleep(0.1)
 
         # await self.motor.ramp_speed(80, 5000)
