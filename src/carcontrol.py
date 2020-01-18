@@ -12,6 +12,7 @@ This module controls a car vis the LEGO control+ Bluetooth interface.
 """
 
 # Built in modules
+import argparse
 import logging
 import codecs
 import json
@@ -19,12 +20,12 @@ import traceback
 
 # Third party modules
 import pika
-import bleak
 import curio
+import txdbus
 from curio import sleep
 from bricknil import attach, start
 from bricknil.hub import CPlusHub
-from bricknil.sensor.motor import CPlusXLMotor
+from bricknil.sensor.motor import CPlusXLMotor, CPlusLargeMotor
 
 # Local modules
 from settings import Settings
@@ -36,6 +37,14 @@ connected_to_Lego = False
 @attach(CPlusXLMotor,
         name='drive1',
         port=0,
+        capabilities=[('sense_speed', 5), 'sense_pos'])
+@attach(CPlusXLMotor,
+        name='drive2',
+        port=1,
+        capabilities=[('sense_speed', 5), 'sense_pos'])
+@attach(CPlusLargeMotor,
+        name='steering1',
+        port=2,
         capabilities=[('sense_speed', 5), 'sense_pos'])
 # @attach(CPlusXLMotor, name='rear_drive', port=1)
 class Truck(CPlusHub):
@@ -53,9 +62,10 @@ class Truck(CPlusHub):
             if method_frame is not None:
                 channel.basic_ack(method_frame.delivery_tag)
                 body = json.loads(codecs.decode(body, 'utf-8'))
-                await self.drive1.set_speed(body['speed'])
-                await sleep(20)
                 print(body)
+                await self.drive1.set_speed(body['speed'])
+                await self.drive2.set_speed(body['speed'])
+                await sleep(20)
             await sleep(0.1)
 
         # await self.motor.ramp_speed(80, 5000)
@@ -88,41 +98,19 @@ class Truck(CPlusHub):
     async def drive1_change(self):
         pass
 
+    async def drive2_change(self):
+        pass
 
-# def get_one_rabbitmq_message():
-#     while True:
-#         method_frame, header_frame, body = channel.basic_get(queue='to_lego')
-#         if method_frame is not None:
-#             print(str(body))
-#             return body
-#         time.sleep(0.5)
-
+    async def steering1_change(self):
+        pass
 
 async def system():
-    hub = Truck(name='hub1',
+    # hub = Truck(name='hub1',
+    #             query_port_info=True,
+    #             ble_id="90:84:2B:4D:03:F7")
+    hub = Truck(name='hub2',
                 query_port_info=True,
-                ble_id="90:84:2B:4D:03:F7")
-
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
-"""
-.. moduleauthor:: John Brännström <john.brannstrom@gmail.com>
-
-Command line script.
-********************
-
-This is a template for writing a script that accepts command line arguments.
-
-"""
-
-# Built in modules
-import argparse
-
-# Third party modules
-# TODO import modules here
-
-# Local modules
-# TODO import modules here
+                ble_id='90:84:2B:4E:35:B4')
 
 
 class Main:
@@ -150,38 +138,41 @@ class Main:
         Run the script.
 
         """
+        # Read settings from YAML file
+        Settings.static_init()
+        Settings.load_settings_from_yaml()
+
         # Connect to log file
         message_log = create_logger(log_file=Settings.MESSAGE_LOG,
                                     level=logging.INFO, screen=False)
         error_log = create_logger(log_file=Settings.ERROR_LOG,
                                   level=60, screen=False)
 
-        # Read settings from YAML file
-        Settings.static_init()
-        Settings.load_settings_from_yaml()
-
-        # Parse command line oprions
+        # Parse command line options
         args = self._parse_command_line_options()
         if args.log_verbosity is not None:
             Settings.LOG_VERBOSITY = args.log_verbosity
 
-        # Connect to RabbitMQ
-        connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host='localhost'))
-        channel = connection.channel()
-        channel.queue_declare(queue='to_lego')
-
         # Connect to LEGO Control+ hub
-        connected_to_lego = False
-        while not connected_to_lego:
+        # try:
+        while True:
             start(system)
-            connected_to_lego = True
-
-        # Close connection to RabbitMQ
-        channel.close()
-        connection.close()
+            break
+        # except BaseException:
+        #     message = traceback_message = traceback.format_exc()
 
 
 if __name__ == '__main__':
+
+    # Connect to RabbitMQ
+    connection = pika.BlockingConnection(
+        pika.ConnectionParameters(host='localhost'))
+    channel = connection.channel()
+    channel.queue_declare(queue='to_lego')
+
     main = Main()
     main.run()
+
+    # Close connection to RabbitMQ
+    channel.close()
+    connection.close()

@@ -6,36 +6,36 @@
 PROJECT="legcocar"
 
 # List of packages to install with apt
-APT_PACKAGES=(\
-"python3=3.7.3-1" \
-"openssl=1.1.1c-1" \
-"build-essential=12.6" \
-"tk-dev=8.6.9+1" \
-"libncurses5-dev=6.1+20181013-2+deb10u2" \
-"libncursesw5-dev=6.1+20181013-2+deb10u2" \
-"libreadline-dev=7.0-5" \
-"libgdbm-dev=1.18.1-4" \
-"libsqlite3-dev=3.27.2-3" \
-"libssl-dev=1.1.1d-0+deb10u2" \
-"libbz2-dev=1.0.6-9.2~deb10u1" \
-"libexpat1-dev=2.2.6-2+deb10u1" \
-"liblzma-dev=5.2.4-1" \
-"zlib1g-dev=1:1.2.11.dfsg-1" \
-"libffi-dev=3.2.1-9" \
-"uuid-dev=2.33.1-0.1" \
-"python3-pip=18.1-5+rpt1" \
-"apache2=2.4.38-3+deb10u3" \
-"libapache2-mod-wsgi-py3=4.6.5-1" \
-"rabbitmq-server=3.7.8-4" \
-"supervisor=3.3.5-1" \
-"bleak==0.5.1"
+APT_PACKAGES=(
+"python3=3.7.3-1"
+"openssl=1.1.1c-1"
+"build-essential=12.6"
+"tk-dev=8.6.9+1"
+"libncurses5-dev=6.1+20181013-2+deb10u2"
+"libncursesw5-dev=6.1+20181013-2+deb10u2"
+"libreadline-dev=7.0-5"
+"libgdbm-dev=1.18.1-4"
+"libsqlite3-dev=3.27.2-3"
+"libssl-dev=1.1.1d-0+deb10u2"
+"libbz2-dev=1.0.6-9.2~deb10u1"
+"libexpat1-dev=2.2.6-2+deb10u1"
+"liblzma-dev=5.2.4-1"
+"zlib1g-dev=1:1.2.11.dfsg-1"
+"libffi-dev=3.2.1-9"
+"uuid-dev=2.33.1-0.1"
+"python3-pip=18.1-5+rpt1"
+"apache2=2.4.38-3+deb10u3"
+"libapache2-mod-wsgi-py3=4.6.5-1"
+"rabbitmq-server=3.7.8-4"
+"supervisor=3.3.5-1"
 )
 
 # List of packages to install with pip3
-PIP3_PACKAGES=(\
-"bricknil==0.9.3" \
-"flask==1.1.1" \
+PIP3_PACKAGES=(
+"bricknil==0.9.3"
+"flask==1.1.1"
 "pika==1.1.0"
+"bricknil-bleak==0.3.1"
 )
 
 # Current location compared to script location
@@ -68,12 +68,12 @@ run_echo "echo \"alias ls='ls -lah --color=auto'\" >> /root/.bashrc"
 #do
 #  run_echo "apt-get -y install ${PACKAGE}"
 #done
-#
-## Install packages with pip3
-#for PACKAGE in "${PIP3_PACKAGES[@]}"
-#do
-#  run_echo "pip3 install ${PACKAGE}"
-#done
+
+# Install packages with pip3
+for PACKAGE in "${PIP3_PACKAGES[@]}"
+do
+  run_echo "pip3 install ${PACKAGE}"
+done
 
 # Create project user
 run_echo "useradd -m ${PROJECT}"

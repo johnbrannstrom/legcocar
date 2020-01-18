@@ -1,45 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import asyncio
-from aio_pika import connect, IncomingMessage
-
-# TODO delete this function
-
-
-async def on_message(message: IncomingMessage):
-    """
-    on_message doesn't necessarily have to be defined as async.
-    Here it is to show that it's possible.
-    """
-    print(" [x] Received message %r" % message)
-    print("Message body is: %r" % message.body)
-    print("Before sleep!")
-    await asyncio.sleep(5)   # Represents async I/O operations
-    print("After sleep!")
+import logging
+from curio import sleep
+from bricknil import attach, start
+from bricknil.hub import CPlusHub
+from bricknil.sensor.motor import CPlusXLMotor
 
 
-async def main(loop):
-    # Perform connection
-    connection = await connect(
-        "amqp://guest:guest@localhost/", loop=loop
-    )
+@attach(CPlusXLMotor, name='front_drive', port=0)
+@attach(CPlusXLMotor, name='rear_drive', port=1)
+class Truck(CPlusHub):
 
-    # Creating a channel
-    channel = await connection.channel()
-
-    # Declaring queue
-    queue = await channel.declare_queue('to_lego')
-
-    # Start listening the queue with name 'hello'
-    await queue.consume(on_message, no_ack=True)
+    async def run(self):
+        self.message_info("Running")
+        # await self.front_drive.set_speed(-100)
+        # await self.rear_drive.set_speed(-100)
+        await sleep(20) # Give it enough time to gather data
 
 
-if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.create_task(main(loop))
+async def system():
+    hub = Truck('truck', True)
 
-    # we enter a never-ending loop that waits for data and
-    # runs callbacks whenever necessary.
-    print(" [*] Waiting for messages. To exit press CTRL+C")
-    loop.run_forever()
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
+    start(system)
