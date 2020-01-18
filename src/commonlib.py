@@ -29,18 +29,17 @@ def create_logger(log_file: str, level=logging.INFO, screen=False):
     logger = logging.getLogger(name=file_name)
     logger.setLevel(level)
 
-    # Add log levels DEBUG1/51 to DEBUG10/60
-    for i in range(1, 10):
-        logging.addLevelName(i+50, 'DEBUG%i' % i)
-
     # Add logging to screen
     if screen:
         stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter('%(levelname)s:%(message)s')
+        formatter = logging.Formatter('%(levelname)s:%(message)s')
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
 
     # Add logging to file
     file_handler = logging.FileHandler(filename=log_file, encoding='utf-8')
-    file_handler.setFormatter('%(asctime)s %(levelname)s:%(message)s')
+    formatter = logging.Formatter('%(asctime)s %(levelname)s:%(message)s')
+    file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
     # Return the logger
