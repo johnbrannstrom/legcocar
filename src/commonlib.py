@@ -10,6 +10,16 @@ This module contains functions and classes used by multiple legcocar modules.
 
 """
 
+# Built in modules
+import logging
+from logging import Logger
+from logging import CRITICAL, ERROR, WARNING, DEBUG, INFO
+
+# Third party modules
+import coloredlogs
+import verboselogs
+from verboselogs import SUCCESS, NOTICE, SPAM, VERBOSE
+
 def create_logger(log_file: str=None,
                   screen: bool=False,
                   level: str=logging.INFO):
