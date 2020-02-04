@@ -161,7 +161,7 @@ class RequestHandler:
                 message = "Speed set to '{}'".format(args['speed'])
                 response = self._json_response(message=message,
                                                status_code=200)
-            # Close connection to RabbitMQ if request is an API request
+            # Close connection to RabbitMQ if request was an API request
             if path.startswith('/api/'):
                 channel.close()
                 connection.close()

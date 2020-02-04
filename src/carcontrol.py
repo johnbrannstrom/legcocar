@@ -26,6 +26,7 @@ from curio import sleep
 from bricknil import attach, start
 from bricknil.hub import CPlusHub
 from bricknil.sensor.motor import CPlusXLMotor, CPlusLargeMotor
+from bricknil.sensor import Light
 
 # Local modules
 from settings import Settings
@@ -33,6 +34,7 @@ from commonlib import create_logger
 
 # Status on connection to LEGO via Bluetooth
 connected_to_Lego = False
+
 
 @attach(CPlusXLMotor,
         name='drive1',
@@ -43,9 +45,12 @@ connected_to_Lego = False
         port=1,
         capabilities=[('sense_speed', 5), 'sense_pos'])
 @attach(CPlusLargeMotor,
-        name='steering1',
+        name='steering',
         port=2,
         capabilities=[('sense_speed', 5), 'sense_pos'])
+@attach(Light,
+        name='lights',
+        port=3)
 # @attach(CPlusXLMotor, name='rear_drive', port=1)
 class Truck(CPlusHub):
 
@@ -63,8 +68,11 @@ class Truck(CPlusHub):
                 channel.basic_ack(method_frame.delivery_tag)
                 body = json.loads(codecs.decode(body, 'utf-8'))
                 print(body)
-                await self.drive1.set_speed(body['speed'])
-                await self.drive2.set_speed(body['speed'])
+                if body['command'] == 'drive':
+                    await self.drive1.set_speed(body['speed'])
+                    await self.drive2.set_speed(body['speed'])
+                elif body['command'] == 'lights':
+                    await self.lights.set_brightness(body['on'])
                 await sleep(2)
             await sleep(0.1)
 
@@ -101,7 +109,7 @@ class Truck(CPlusHub):
     async def drive2_change(self):
         pass
 
-    async def steering1_change(self):
+    async def steering_change(self):
         pass
 
 async def system():
