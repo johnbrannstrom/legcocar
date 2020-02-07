@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+# TODO delete this file
+
 import logging
 from curio import sleep
 from bricknil import attach, start

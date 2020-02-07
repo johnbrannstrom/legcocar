@@ -161,6 +161,22 @@ class RequestHandler:
                 message = "Speed set to '{}'".format(args['speed'])
                 response = self._json_response(message=message,
                                                status_code=200)
+            elif path == '/api/lights' and request.method == 'POST':
+                mandatory_args = {'hub': 'str', 'id': 'str', 'speed': 'int'}
+                optional_args = {}
+                self._validate_arguments(path=path,
+                                         args=args,
+                                         mandatory_args=mandatory_args,
+                                         optional_args=optional_args)
+                args['command'] = 'speed'
+                body = json.dumps(args)
+                # Send message to to RabbitMQ
+                channel.basic_publish(exchange='',
+                                      routing_key='to_lego',
+                                      body=body)
+                message = "Speed set to '{}'".format(args['speed'])
+                response = self._json_response(message=message,
+                                               status_code=200)
             # Close connection to RabbitMQ if request was an API request
             if path.startswith('/api/'):
                 channel.close()

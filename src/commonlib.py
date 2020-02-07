@@ -20,9 +20,10 @@ import coloredlogs
 import verboselogs
 from verboselogs import SUCCESS, NOTICE, SPAM, VERBOSE
 
-def create_logger(log_file: str=None,
-                  screen: bool=False,
-                  level: str=logging.INFO):
+
+def create_logger(log_file: str = None,
+                  screen: bool = False,
+                  level: str = logging.INFO):
     """
     Create a logging object.
 

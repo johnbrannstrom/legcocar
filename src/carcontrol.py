@@ -51,14 +51,13 @@ connected_to_Lego = False
 @attach(Light,
         name='led1',
         port=3)
-# @attach(CPlusXLMotor, name='rear_drive', port=1)
 class Car(CPlusHub):
 
-    def __init__(self):
-        """
-        Initializes car.
-
-        """
+    def __init__(self,
+                 name: str,
+                 query_port_info: bool = False,
+                 ble_id: str = None):
+        super().__init__(name, query_port_info, ble_id)
         self._speed = 0
 
     async def set_speed(self, body: dict):
@@ -91,13 +90,13 @@ class Car(CPlusHub):
 
         # Set requested brightness in light(s)
 
-        evt = curio.Event()
-        # Create a few waiters
-        await curio.spawn(waiter(evt))
-
-        await self.led1.set_brightness(brightness)
-        await sleep(duration) # TODO this does not work its paralell
-        await self.led1.set_brightness(0)
+        # evt = curio.Event()
+        # # Create a few waiters
+        # await curio.spawn(waiter(evt))
+        #
+        # await self.led1.set_brightness(brightness)
+        # await sleep(duration) # TODO this does not work its paralell
+        # await self.led1.set_brightness(0)
 
     async def set_high_beam_brightness(self, body: dict):
         """
@@ -172,11 +171,9 @@ class Car(CPlusHub):
                 body = json.loads(codecs.decode(body, 'utf-8'))
                 print(body)
                 if body['command'] == 'speed':
-                    await self.set_speed(body)
-                    await self.drive_motor1.set_speed(body['speed'])
-                    await self.drive_motor2.set_speed(body['speed'])
-                elif body['command'] == 'lights':
-                    await self.lights.set_brightness(body['on'])
+                    await self.set_speed(body=body)
+                elif body['command'] == 'headlamps':
+                    await self.lights.set_brightness(body=body)
                 await sleep(2)
             await sleep(0.1)
 
@@ -222,8 +219,8 @@ async def system():
     #             query_port_info=True,
     #             ble_id="90:84:2B:4D:03:F7")
     hub = Car(name='hub2',
-                query_port_info=True,
-                ble_id='90:84:2B:4E:35:B4')
+              query_port_info=True,
+              ble_id='90:84:2B:4E:35:B4')
 
 
 class Main:

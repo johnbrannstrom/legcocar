@@ -1,6 +1,8 @@
 #!/bin/bash
 
 # Setup Linux environment for project
+# If first command line argument is set to "no-install", no packages will be
+# installed
 
 # Name of project
 PROJECT="legcocar"
@@ -28,6 +30,8 @@ APT_PACKAGES=(
 "libapache2-mod-wsgi-py3=4.6.5-1"
 "rabbitmq-server=3.7.8-4"
 "supervisor=3.3.5-1"
+"coloredlogs==10.0"
+"verboselogs==1.7"
 )
 
 # List of packages to install with pip3
@@ -44,8 +48,9 @@ DIR=$(dirname "$(readlink -f "$0")")
 # Run command and then echo command and status
 # If the command did not run without error, we exit
 run_echo () {
-  eval $1 > /dev/null
-  if [ "${?}" -eq "0" ]
+  eval "${1}" > /dev/null
+  STATUS="${?}"
+  if [ "${STATUS}" -eq "0" ]
   then
     echo -ne "[ \e[1;32m OK  \033[0m ] "
     echo "${1}"
@@ -61,19 +66,21 @@ run_echo "mkdir -p /var/log/supervisor"
 # Set bash_aliases for root
 sed -i "/alias ls='ls -lah --color=auto'/d" /root/.bashrc
 run_echo "echo \"alias ls='ls -lah --color=auto'\" >> /root/.bashrc"
-# TODO uncomment
-## Install packages with apt
-#run_echo "apt-get update"
-#for PACKAGE in "${APT_PACKAGES[@]}"
-#do
-#  run_echo "apt-get -y install ${PACKAGE}"
-#done
 
-# Install packages with pip3
-for PACKAGE in "${PIP3_PACKAGES[@]}"
-do
-  run_echo "pip3 install ${PACKAGE}"
-done
+if [ "${1}" != "no-install" ]; then
+  # Install packages with apt
+  run_echo "apt-get update"
+  for PACKAGE in "${APT_PACKAGES[@]}"
+  do
+    run_echo "apt-get -y install ${PACKAGE}"
+  done
+
+  # Install packages with pip3
+  for PACKAGE in "${PIP3_PACKAGES[@]}"
+  do
+    run_echo "pip3 install ${PACKAGE}"
+  done
+fi
 
 # Create project user
 run_echo "useradd -m ${PROJECT}"
