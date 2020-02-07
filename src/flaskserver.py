@@ -145,14 +145,14 @@ class RequestHandler:
             # Handle requests
             if path == '/':
                 response = render_template('index.html')
-            elif path == '/api/drive' and request.method == 'POST':
+            elif path == '/api/speed' and request.method == 'POST':
                 mandatory_args = {'hub': 'str', 'id': 'str', 'speed': 'int'}
                 optional_args = {}
                 self._validate_arguments(path=path,
                                          args=args,
                                          mandatory_args=mandatory_args,
                                          optional_args=optional_args)
-                args['command'] = 'drive'
+                args['command'] = 'speed'
                 body = json.dumps(args)
                 # Send message to to RabbitMQ
                 channel.basic_publish(exchange='',
@@ -302,7 +302,7 @@ web_server.strict_slashes = False
 
 @web_server.route('/', methods=['GET'])
 @web_server.route('/index.html', methods=['GET'])
-@web_server.route('/api/drive', methods=['POST'])
+@web_server.route('/api/speed', methods=['POST'])
 def index():
     """
     Handle incoming HTTP requests.

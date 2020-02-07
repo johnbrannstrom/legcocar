@@ -37,28 +37,131 @@ connected_to_Lego = False
 
 
 @attach(CPlusXLMotor,
-        name='drive1',
+        name='drive_motor1',
         port=0,
         capabilities=[('sense_speed', 5), 'sense_pos'])
 @attach(CPlusXLMotor,
-        name='drive2',
+        name='drive_motor2',
         port=1,
         capabilities=[('sense_speed', 5), 'sense_pos'])
 @attach(CPlusLargeMotor,
-        name='steering',
+        name='steering_motor',
         port=2,
         capabilities=[('sense_speed', 5), 'sense_pos'])
 @attach(Light,
-        name='lights',
+        name='led1',
         port=3)
 # @attach(CPlusXLMotor, name='rear_drive', port=1)
-class Truck(CPlusHub):
+class Car(CPlusHub):
+
+    def __init__(self):
+        """
+        Initializes car.
+
+        """
+        self._speed = 0
+
+    async def set_speed(self, body: dict):
+        """
+        Set car speed.
+
+        :param body: Target "speed" command body.
+
+        """
+        # Motor/car speed 0-100
+        speed = body['speed']
+
+        # Set requested speed in motor(s)
+        await self.drive_motor1.set_speed(speed)
+        await self.drive_motor2.set_speed(speed)
+        await sleep(2)
+
+    async def set_headlamp_brightness(self, body: dict):
+        """
+        Set headlamp brightness.
+
+        :param body: Target "headlamps" command body.
+
+        """
+        # Light brightness 0-100
+        brightness = body['brightness']
+
+        # Light will be on for this long in seconds
+        duration = body['duration']
+
+        # Set requested brightness in light(s)
+
+        evt = curio.Event()
+        # Create a few waiters
+        await curio.spawn(waiter(evt))
+
+        await self.led1.set_brightness(brightness)
+        await sleep(duration) # TODO this does not work its paralell
+        await self.led1.set_brightness(0)
+
+    async def set_high_beam_brightness(self, body: dict):
+        """
+        Set high beam brightness.
+
+        :param body: Target "high_beam" command body.
+
+        """
+        # Light brightness 0-100
+        brightness = body['brightness']
+
+        # Set requested brightness in light(s)
+        await self.led1.set_brightness(brightness)
+        await sleep(1)
+
+    async def set_rear_light_brightness(self, body: dict):
+        """
+        Set rear light brightness.
+
+        :param body: Target "rear_light" command body.
+
+        """
+        # Light brightness 0-100
+        brightness = body['brightness']
+
+        # Set requested brightness in light(s)
+        await self.led1.set_brightness(brightness)
+        await sleep(1)
+
+    async def set_brake_light_brightness(self, body: dict):
+        """
+        Set brake light brightness.
+
+        :param body: Target "brake_light" command body.
+
+        """
+        # Light brightness 0-100
+        brightness = body['brightness']
+
+        # Set requested brightness in light(s)
+        await self.led1.set_brightness(brightness)
+        await sleep(1)
+
+    async def set_indicator_lights(self, body: dict):
+        """
+        Set indicator light operation.
+
+        :param body: Target "indicator_lights" command body.
+
+        """
+        # Light brightness 0-100
+        brightness = body['brightness']
+        # TODO, Duration, length, intervall, left, right
+
+        # Set requested brightness in light(s)
+        await self.led1.set_brightness(brightness)
+        await sleep(1)
 
     async def run(self):
-        self.message_info("Running")
+        """
+        Start car operation.
 
-        # async def drive:
-        #     pass
+        """
+        self.message_info("Running")
 
         while True:
             self.message_info("looping")
@@ -68,9 +171,10 @@ class Truck(CPlusHub):
                 channel.basic_ack(method_frame.delivery_tag)
                 body = json.loads(codecs.decode(body, 'utf-8'))
                 print(body)
-                if body['command'] == 'drive':
-                    await self.drive1.set_speed(body['speed'])
-                    await self.drive2.set_speed(body['speed'])
+                if body['command'] == 'speed':
+                    await self.set_speed(body)
+                    await self.drive_motor1.set_speed(body['speed'])
+                    await self.drive_motor2.set_speed(body['speed'])
                 elif body['command'] == 'lights':
                     await self.lights.set_brightness(body['on'])
                 await sleep(2)
@@ -103,20 +207,21 @@ class Truck(CPlusHub):
         #                              ramp_time_ms=5000)
         # await sleep(20)
 
-    async def drive1_change(self):
+    async def drive_motor1_change(self):
         pass
 
-    async def drive2_change(self):
+    async def drive_motor2_change(self):
         pass
 
-    async def steering_change(self):
+    async def steering_motor_change(self):
         pass
+
 
 async def system():
-    # hub = Truck(name='hub1',
+    # hub = Car(name='hub1',
     #             query_port_info=True,
     #             ble_id="90:84:2B:4D:03:F7")
-    hub = Truck(name='hub2',
+    hub = Car(name='hub2',
                 query_port_info=True,
                 ble_id='90:84:2B:4E:35:B4')
 

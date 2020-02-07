@@ -10,7 +10,7 @@ from bricknil.sensor.motor import CPlusXLMotor
 
 @attach(CPlusXLMotor, name='front_drive', port=0)
 @attach(CPlusXLMotor, name='rear_drive', port=1)
-class Truck(CPlusHub):
+class Car(CPlusHub):
 
     async def run(self):
         self.message_info("Running")
@@ -20,7 +20,7 @@ class Truck(CPlusHub):
 
 
 async def system():
-    hub = Truck('truck', True)
+    hub = Car('car', True)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
