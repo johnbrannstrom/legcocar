@@ -92,7 +92,6 @@ class RequestHandler:
         # Look for missing arguments
         missing_args = [i for i in mandatory_args.keys()
                         if i not in args.keys()]
-
         if missing_args != []:
             raise HttpRequestMissingArgumentError(
                 args=missing_args, path=path)
@@ -103,7 +102,9 @@ class RequestHandler:
             raise HttpRequestInvalidArgumentError(
                 args=invalid_args, path=path)
         # Look for arguments with wrong type
-        for arg, type_ in all_args.items():
+        print(args) # TODO delete
+        for arg in args.keys():
+            type_ = all_args[arg]
             value = args[arg]
             type_error = False
             # Verify string type parameters
@@ -121,39 +122,42 @@ class RequestHandler:
             # Verify dict type parameters
             elif type_ == 'dict' and not type(value) == dict:
                 type_error = True
+            elif type_ == 'float' and not type(value) == float:
+                type_error = True
             # If we found a type error, raise it
             if type_error:
                 raise HttpRequestArgumentTypeError(
                     path=path, arg=arg, arg_type=all_args[arg],
                     value=value)
 
-    def _handle_api_request(self, mandatory_args: dict, optional_args: dict,
-                            path, args):
+    def _handle_api_request(self, mandatory_args: dict, optional_args: dict):
         """
-        Handle a API command request.
+        Handle a HTTP API request.
 
-        :param mandatory_args: TODO
-        :param optional_args:  TODO
-        :param path:           TODO
-        :param args:           TODO
+        :param mandatory_args: Dictionary describing mandatory arguments.
+        :param optional_args:  Dictionary describing optional arguments.
         :rtype:   dict
         :returns: API response message.
 
         """
+        # Get HTTP request arguments
+        args = self._get_request_arguments()
+        # Get HTTP request path
+        path = request.path
         self._validate_arguments(path=path,
                                  args=args,
                                  mandatory_args=mandatory_args,
                                  optional_args=optional_args)
         # Get command from path
-        args['command'] = re.match('.*/(.+)', string='path').group(1)
+        args['command'] = re.match('.*/(.+)', string=path).group(1)
         # Set body
         body = json.dumps(args)
         # Send message to to RabbitMQ
         self._channel.basic_publish(exchange='',
                                     routing_key='to_lego',
                                     body=body)
-        message = 'Speed set to "{}"'.format(args['speed'])
-        return self._json_response(message=message,
+        # message = 'Speed set to {}'.format(args['speed'])
+        return self._json_response(message=str(args),
                                    status_code=200)
 
     def handle_request(self):
@@ -161,7 +165,6 @@ class RequestHandler:
         Handle a HTTP request.
 
         """
-        args = self._get_request_arguments()
         path = request.path
         content_type = request.content_type
         try:
@@ -177,6 +180,7 @@ class RequestHandler:
                     path=path,
                     content_type=content_type,
                     wanted_type='application/json')
+
             # Handle requests
             response = None
             if path == '/':
@@ -184,39 +188,27 @@ class RequestHandler:
             elif path == '/api/speed' and request.method == 'POST':
                 mandatory_args = {'hub': 'str', 'speed': 'int'}
                 optional_args = {}
-                self.handle_request(mandatory_args=mandatory_args,
-                                    optional_args=optional_args,)
-
-                self._validate_arguments(path=path,
-                                         args=args,
-                                         mandatory_args=mandatory_args,
-                                         optional_args=optional_args)
-                args['command'] = 'speed'
-                body = json.dumps(args)
-                # Send message to to RabbitMQ
-                self._channel.basic_publish(exchange='',
-                                            routing_key='to_lego',
-                                            body=body)
-                message = 'Speed set to "{}"'.format(args['speed'])
-                response = self._json_response(message=message,
-                                               status_code=200)
+                response = self._handle_api_request(
+                    mandatory_args=mandatory_args,
+                    optional_args=optional_args)
             elif path == '/api/headlights' and request.method == 'POST':
-                mandatory_args = {'hub': 'str', 'brightness': 'int'}
-                optional_args = {}
-                self._validate_arguments(path=path,
-                                         args=args,
-                                         mandatory_args=mandatory_args,
-                                         optional_args=optional_args)
-                args['command'] = 'headlights'
-                body = json.dumps(args)
-                # Send message to to RabbitMQ
-                self._channel.basic_publish(exchange='',
-                                            routing_key='to_lego',
-                                            body=body)
-                message = 'Headlight brightness set to "{}"'
-                message = message.format(args['speed'])
-                response = self._json_response(message=message,
-                                               status_code=200)
+                mandatory_args = {'hub': 'str',
+                                  'brightness': 'int'}
+                optional_args = {'duration': 'int'}
+                response = self._handle_api_request(
+                    mandatory_args=mandatory_args,
+                    optional_args=optional_args)
+            elif path == '/api/indicators' and request.method == 'POST':
+                mandatory_args = {'hub': 'str',
+                                  'brightness': 'int'}
+                optional_args = {'duration': 'int',
+                                 'length': 'float',
+                                 'interval': 'float',
+                                 'left': 'bool',
+                                 'right': 'bool'}
+                response = self._handle_api_request(
+                    mandatory_args=mandatory_args,
+                    optional_args=optional_args)
             # Close connection to RabbitMQ if request was an API request
             if path.startswith('/api/'):
                 self._channel.close()
@@ -359,6 +351,8 @@ web_server.strict_slashes = False
 @web_server.route('/', methods=['GET'])
 @web_server.route('/index.html', methods=['GET'])
 @web_server.route('/api/speed', methods=['POST'])
+@web_server.route('/api/headlights', methods=['POST'])
+@web_server.route('/api/indicators', methods=['POST'])
 def index():
     """
     Handle incoming HTTP requests.
