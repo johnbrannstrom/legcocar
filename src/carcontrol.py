@@ -203,6 +203,10 @@ class Car(CPlusHub):
         :param body: Target "indicator_lights" command body.
 
         """
+        # Set indicator objects
+        left_indicator = self.led1
+        right_indicator = self.led1
+
         # Light brightness 0-100
         brightness = body['brightness']
 
@@ -211,7 +215,7 @@ class Car(CPlusHub):
         if 'duration' in body:
             duration = body['duration']
 
-        # Indicators will on this long each time (seconds)
+        # How long indicators will on each time (seconds)
         length = 0.5
         if 'length' in body:
             length = body['length']
@@ -221,22 +225,35 @@ class Car(CPlusHub):
         if 'interval' in body:
             interval = body['interval']
 
-        # If left indicator should be on
-        left = True
+        # If left indicator should be operating
+        left = False
         if 'left' in body:
             left = body['left']
 
-        # If right indicator should be on
-        left = True
-        if 'left' in body:
-            left = body['left']
+        # If right indicator should be operating
+        right = False
+        if 'right' in body:
+            right = body['right']
 
+        current_duration = 0.0
         # Set requested indicator operation
-        for i in range(10):
-            await self.led1.set_brightness(brightness)
+        while duration == 0 or current_duration <= duration:
+            # Turn on requested indicator lights
+            if left:
+                await left_indicator.set_brightness(brightness)
+            if right:
+                await right_indicator.led1.set_brightness(brightness)
+            # Wait while indicator lights are on
             await sleep(length)
-            await self.led1.set_brightness(0)
+            # Turn off requested indicator lights
+            if left:
+                await left_indicator.set_brightness(0)
+            if right:
+                await left_indicator.set_brightness(0)
+            # Wait while indicator lights are off
             await sleep(interval - length)
+            # Go to next interval
+            current_duration += interval
         await sleep(1)
 
     async def run(self):

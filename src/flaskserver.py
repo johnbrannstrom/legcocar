@@ -102,7 +102,6 @@ class RequestHandler:
             raise HttpRequestInvalidArgumentError(
                 args=invalid_args, path=path)
         # Look for arguments with wrong type
-        print(args) # TODO delete
         for arg in args.keys():
             type_ = all_args[arg]
             value = args[arg]
