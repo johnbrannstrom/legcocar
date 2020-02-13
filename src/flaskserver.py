@@ -129,6 +129,7 @@ class RequestHandler:
                     path=path, arg=arg, arg_type=all_args[arg],
                     value=value)
 
+    # noinspection PyUnresolvedReferences
     def _handle_api_request(self, mandatory_args: dict, optional_args: dict):
         """
         Handle a HTTP API request.
