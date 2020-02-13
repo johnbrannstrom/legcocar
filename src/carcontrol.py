@@ -36,21 +36,39 @@ from commonlib import create_logger
 connected_to_Lego = False
 
 
+# Uncomment and change port to attach drive motor 1
 @attach(CPlusXLMotor,
         name='drive_motor1',
         port=0,
         capabilities=[('sense_speed', 5), 'sense_pos'])
+# Uncomment and change port to attach drive motor 2
 @attach(CPlusXLMotor,
         name='drive_motor2',
         port=1,
         capabilities=[('sense_speed', 5), 'sense_pos'])
+# Uncomment and change port to attach drive motor 3
+# @attach(CPlusXLMotor,
+#         name='drive_motor3',
+#         port=0,
+#         capabilities=[('sense_speed', 5), 'sense_pos'])
+# Uncomment and change port to attach drive motor 4
+# @attach(CPlusXLMotor,
+#         name='drive_motor4',
+#         port=0,
+#         capabilities=[('sense_speed', 5), 'sense_pos'])
+# Uncomment and change port to attach steering motor
 @attach(CPlusLargeMotor,
         name='steering_motor',
         port=2,
         capabilities=[('sense_speed', 5), 'sense_pos'])
+# Uncomment and change port to attach left indicator
 @attach(Light,
-        name='led1',
+        name='left_indicator',
         port=3)
+# Uncomment and change port to attach right indicator
+# @attach(Light,
+#         name='right_indicator',
+#         port=0)
 class Car(CPlusHub):
 
     def __init__(self,
@@ -203,10 +221,6 @@ class Car(CPlusHub):
         :param body: Target "indicator_lights" command body.
 
         """
-        # Set indicator objects
-        left_indicator = self.led1
-        right_indicator = self.led1
-
         # Light brightness 0-100
         brightness = body['brightness']
 
@@ -240,16 +254,16 @@ class Car(CPlusHub):
         while duration == 0 or current_duration <= duration:
             # Turn on requested indicator lights
             if left:
-                await left_indicator.set_brightness(brightness)
+                await self.left_indicator.set_brightness(brightness)
             if right:
-                await right_indicator.led1.set_brightness(brightness)
+                await self.right_indicator.led1.set_brightness(brightness)
             # Wait while indicator lights are on
             await sleep(length)
             # Turn off requested indicator lights
             if left:
-                await left_indicator.set_brightness(0)
+                await self.left_indicator.set_brightness(0)
             if right:
-                await left_indicator.set_brightness(0)
+                await self.right_indicator.set_brightness(0)
             # Wait while indicator lights are off
             await sleep(interval - length)
             # Go to next interval
