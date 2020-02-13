@@ -61,13 +61,33 @@ connected_to_Lego = False
         name='steering_motor',
         port=2,
         capabilities=[('sense_speed', 5), 'sense_pos'])
-# Uncomment and change port to attach left indicator
+# Uncomment and change port to attach left indicators
 @attach(Light,
-        name='left_indicator',
+        name='left_indicators',
         port=3)
-# Uncomment and change port to attach right indicator
+# Uncomment and change port to attach right indicators
 # @attach(Light,
-#         name='right_indicator',
+#         name='right_indicators',
+#         port=0)
+# Uncomment and change port to reverse lights
+# @attach(Light,
+#         name='reverse_lights',
+#         port=0)
+# Uncomment and change port to brake lights
+# @attach(Light,
+#         name='brake_lights',
+#         port=0)
+# Uncomment and change port to tail lights
+# @attach(Light,
+#         name='tail_lights',
+#         port=0)
+# Uncomment and change port to high beams
+# @attach(Light,
+#         name='high_beams',
+#         port=0)
+# Uncomment and change port to attach headlights
+# @attach(Light,
+#         name='headlights',
 #         port=0)
 class Car(CPlusHub):
 
@@ -86,8 +106,6 @@ class Car(CPlusHub):
         self._reverse_light_status = False
         self._left_indicator_status = False
         self._right_indicator_status = False
-
-        # Init
 
     async def set_speed(self, body: dict):
         """
@@ -108,7 +126,7 @@ class Car(CPlusHub):
         """
         Set headlamp brightness.
 
-        :param body: Target "headlamps" command body.
+        :param body: Target "headlights" command body.
 
         """
         # Light brightness 0-100
@@ -119,18 +137,24 @@ class Car(CPlusHub):
         if 'duration' in body:
             duration = body['duration']
 
+        # Set status
+        if brightness == 0:
+            self._headlight_status = False
+        else:
+            self._headlight_status = True
+
         # Set requested brightness in light(s)
-        await self.led1.set_brightness(brightness)
+        await self.headlights.set_brightness(brightness)
         if duration > 0:
             await sleep(duration)
-            await self.led1.set_brightness(0)
+            await self.headlights.set_brightness(0)
         await sleep(1)
 
     async def set_high_beam_brightness(self, body: dict):
         """
         Set high beam brightness.
 
-        :param body: Target "high_beam" command body.
+        :param body: Target "high_beams" command body.
 
         """
         # Light brightness 0-100
@@ -141,11 +165,17 @@ class Car(CPlusHub):
         if 'duration' in body:
             duration = body['duration']
 
+        # Set status
+        if brightness == 0:
+            self._high_beam_status = False
+        else:
+            self._high_beam_status = True
+
         # Set requested brightness in light(s)
-        await self.led1.set_brightness(brightness)
+        await self.high_beams.set_brightness(brightness)
         if duration > 0:
             await sleep(duration)
-            await self.led1.set_brightness(0)
+            await self.high_beams.set_brightness(0)
         await sleep(1)
 
     async def set_tail_light_brightness(self, body: dict):
@@ -163,18 +193,24 @@ class Car(CPlusHub):
         if 'duration' in body:
             duration = body['duration']
 
+        # Set status
+        if brightness == 0:
+            self._tail_light_status = False
+        else:
+            self._tail_light_status = True
+
         # Set requested brightness in light(s)
-        await self.led1.set_brightness(brightness)
+        await self.tail_lights.set_brightness(brightness)
         if duration > 0:
             await sleep(duration)
-            await self.led1.set_brightness(0)
+            await self.tail_lights.set_brightness(0)
         await sleep(1)
 
     async def set_brake_light_brightness(self, body: dict):
         """
         Set brake light brightness.
 
-        :param body: Target "brake_light" command body.
+        :param body: Target "brake_lights" command body.
 
         """
         # Light brightness 0-100
@@ -185,18 +221,24 @@ class Car(CPlusHub):
         if 'duration' in body:
             duration = body['duration']
 
+        # Set status
+        if brightness == 0:
+            self._brake_light_status = False
+        else:
+            self._brake_light_status = True
+
         # Set requested brightness in light(s)
-        await self.led1.set_brightness(brightness)
+        await self.brake_lights.set_brightness(brightness)
         if duration > 0:
             await sleep(duration)
-            await self.led1.set_brightness(0)
+            await self.brake_lights.set_brightness(0)
         await sleep(1)
 
     async def set_reverse_light_brightness(self, body: dict):
         """
         Set reverse light brightness.
 
-        :param body: Target "reverse_light" command body.
+        :param body: Target "reverse_lights" command body.
 
         """
         # Light brightness 0-100
@@ -207,11 +249,17 @@ class Car(CPlusHub):
         if 'duration' in body:
             duration = body['duration']
 
+        # Set status
+        if brightness == 0:
+            self._reverse_light_status = False
+        else:
+            self._reverse_light_status = True
+
         # Set requested brightness in light(s)
-        await self.led1.set_brightness(brightness)
+        await self.reverse_lights.set_brightness(brightness)
         if duration > 0:
             await sleep(duration)
-            await self.led1.set_brightness(0)
+            await self.reverse_lights.set_brightness(0)
         await sleep(1)
 
     async def set_indicator_lights(self, body: dict):
@@ -249,26 +297,38 @@ class Car(CPlusHub):
         if 'right' in body:
             right = body['right']
 
-        current_duration = 0.0
+        # Set indicator status on
+        if left:
+            self._left_indicator_status = True
+        if right:
+            self._right_indicator_status = True
+
         # Set requested indicator operation
+        current_duration = 0.0
         while duration == 0 or current_duration <= duration:
             # Turn on requested indicator lights
             if left:
-                await self.left_indicator.set_brightness(brightness)
+                await self.left_indicators.set_brightness(brightness)
             if right:
-                await self.right_indicator.led1.set_brightness(brightness)
+                await self.right_indicators.led1.set_brightness(brightness)
             # Wait while indicator lights are on
             await sleep(length)
             # Turn off requested indicator lights
             if left:
-                await self.left_indicator.set_brightness(0)
+                await self.left_indicators.set_brightness(0)
             if right:
-                await self.right_indicator.set_brightness(0)
+                await self.right_indicators.set_brightness(0)
             # Wait while indicator lights are off
             await sleep(interval - length)
             # Go to next interval
             current_duration += interval
         await sleep(1)
+
+        # Set indicator status off
+        if left:
+            self._left_indicator_status = False
+        if right:
+            self._right_indicator_status = False
 
     async def run(self):
         """
