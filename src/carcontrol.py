@@ -349,6 +349,14 @@ class Car(CPlusHub):
                     await self.set_speed(body=body)
                 elif body['command'] == 'headlights':
                     await self.set_headlight_brightness(body=body)
+                elif body['command'] == 'high_beams':
+                    await self.set_high_beam_brightness(body=body)
+                elif body['command'] == 'tail_lights':
+                    await self.set_tail_light_brightness(body=body)
+                elif body['command'] == 'brake_lights':
+                    await self.set_brake_light_brightness(body=body)
+                elif body['command'] == 'reverse_lights':
+                    await self.set_reverse_light_brightness(body=body)
                 elif body['command'] == 'indicators':
                     await self.set_indicator_lights(body=body)
                 await sleep(2)

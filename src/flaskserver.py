@@ -182,24 +182,35 @@ class RequestHandler:
 
             # Handle requests
             response = None
+
+            # Handle UI
             if path == '/':
                 response = render_template('index.html')
+
+            # Handle speed
             elif path == '/api/speed' and request.method == 'POST':
-                mandatory_args = {'hub': 'str', 'speed': 'int'}
+                mandatory_args = {'speed': 'int'}
                 optional_args = {}
                 response = self._handle_api_request(
                     mandatory_args=mandatory_args,
                     optional_args=optional_args)
-            elif path == '/api/headlights' and request.method == 'POST':
-                mandatory_args = {'hub': 'str',
-                                  'brightness': 'int'}
+
+            # Handle lights
+            elif ((path == '/api/headlights' or
+                   path == '/api/high_beams' or
+                   path == '/api/tail_lights' or
+                   path == '/api/brake_lights' or
+                   path == '/api/reverse_lights')
+                  and request.method == 'POST'):
+                mandatory_args = {'brightness': 'int'}
                 optional_args = {'duration': 'int'}
                 response = self._handle_api_request(
                     mandatory_args=mandatory_args,
                     optional_args=optional_args)
+
+            # Handle indicators
             elif path == '/api/indicators' and request.method == 'POST':
-                mandatory_args = {'hub': 'str',
-                                  'brightness': 'int'}
+                mandatory_args = {'brightness': 'int'}
                 optional_args = {'duration': 'int',
                                  'length': 'float',
                                  'interval': 'float',
@@ -208,6 +219,7 @@ class RequestHandler:
                 response = self._handle_api_request(
                     mandatory_args=mandatory_args,
                     optional_args=optional_args)
+
             # Close connection to RabbitMQ if request was an API request
             if path.startswith('/api/'):
                 self._channel.close()
@@ -351,6 +363,10 @@ web_server.strict_slashes = False
 @web_server.route('/index.html', methods=['GET'])
 @web_server.route('/api/speed', methods=['POST'])
 @web_server.route('/api/headlights', methods=['POST'])
+@web_server.route('/api/high_beams', methods=['POST'])
+@web_server.route('/api/tail_lights', methods=['POST'])
+@web_server.route('/api/brake_lights', methods=['POST'])
+@web_server.route('/api/reverse_lights', methods=['POST'])
 @web_server.route('/api/indicators', methods=['POST'])
 def index():
     """
