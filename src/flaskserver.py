@@ -209,6 +209,15 @@ class RequestHandler:
                     mandatory_args=mandatory_args,
                     optional_args=optional_args)
 
+            # Handle steering position
+            elif (path == '/api/steering' and
+                  request.method == 'POST'):
+                mandatory_args = {'position': 'int'}
+                optional_args = {'speed': 'int', 'max_power': 'int'}
+                response = self._handle_api_request(
+                    mandatory_args=mandatory_args,
+                    optional_args=optional_args)
+
             # Handle indicators
             elif path == '/api/indicators' and request.method == 'POST':
                 mandatory_args = {'brightness': 'int'}
@@ -362,7 +371,9 @@ web_server.strict_slashes = False
 
 @web_server.route('/', methods=['GET'])
 @web_server.route('/index.html', methods=['GET'])
+@web_server.route('/api/init', methods=['POST'])
 @web_server.route('/api/speed', methods=['POST'])
+@web_server.route('/api/steering', methods=['POST'])
 @web_server.route('/api/headlights', methods=['POST'])
 @web_server.route('/api/high_beams', methods=['POST'])
 @web_server.route('/api/tail_lights', methods=['POST'])

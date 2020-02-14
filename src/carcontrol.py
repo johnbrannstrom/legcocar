@@ -40,12 +40,12 @@ connected_to_Lego = False
 @attach(CPlusXLMotor,
         name='drive_motor1',
         port=0,
-        capabilities=[('sense_speed', 5), 'sense_pos'])
+        capabilities=[('sense_speed', 5)])
 # Uncomment and change port to attach drive motor 2
 @attach(CPlusXLMotor,
         name='drive_motor2',
         port=1,
-        capabilities=[('sense_speed', 5), 'sense_pos'])
+        capabilities=[('sense_speed', 5)])
 # Uncomment and change port to attach drive motor 3
 # @attach(CPlusXLMotor,
 #         name='drive_motor3',
@@ -60,7 +60,7 @@ connected_to_Lego = False
 @attach(CPlusLargeMotor,
         name='steering_motor',
         port=2,
-        capabilities=[('sense_speed', 5), 'sense_pos'])
+        capabilities=['sense_pos'])
 # Uncomment and change port to attach left indicators
 @attach(Light,
         name='left_indicators',
@@ -99,6 +99,9 @@ class Car(CPlusHub):
 
         # Init status variables
         self._speed = 0
+        self._steering_pos = 0
+        self._steering_max_left = None
+        self._steering_max_right = None
         self._headlight_status = False
         self._tail_light_status = False
         self._high_beam_status = False
@@ -120,6 +123,34 @@ class Car(CPlusHub):
         # Set requested speed in motor(s)
         await self.drive_motor1.set_speed(self._speed)
         await self.drive_motor2.set_speed(self._speed)
+        await sleep(2)
+    # TODO work in progress
+    async def set_steering_position(self, body: dict):
+        """
+        Set car steering position.
+
+        :param body: Target "steering" command body.
+
+        """
+        # Set steering position in degrees
+        # -90 = full left
+        # 90 = full right
+        self._steering_pos = body['position']
+
+        # Steering speed
+        speed = 10
+        if 'speed' in body:
+            speed = body['speed']
+
+        # Max percentage power that will be applied for steering (0-100%)
+        max_power = 20
+        if 'max_power' in body:
+            max_power = body['max_power']
+
+        # Set requested position in steering motor
+        await self.steering_motor.set_pos(pos=self._steering_pos,
+                                          speed=speed,
+                                          max_power=max_power)
         await sleep(2)
 
     async def set_headlight_brightness(self, body: dict):
@@ -344,8 +375,10 @@ class Car(CPlusHub):
             if method_frame is not None:
                 channel.basic_ack(method_frame.delivery_tag)
                 body = json.loads(codecs.decode(body, 'utf-8'))
-                print(body)
+                print(body)  # TODO delete when logging implemented
                 if body['command'] == 'speed':
+                    await self.set_speed(body=body)
+                elif body['command'] == 'steering':
                     await self.set_speed(body=body)
                 elif body['command'] == 'headlights':
                     await self.set_headlight_brightness(body=body)
@@ -390,13 +423,17 @@ class Car(CPlusHub):
         # await sleep(20)
 
     async def drive_motor1_change(self):
-        pass
+        self._speed = self.drive_motor1.speed
 
     async def drive_motor2_change(self):
-        pass
+        self._speed = self.drive_motor2.speed
 
     async def steering_motor_change(self):
-        pass
+        self.message_info(
+            f'Train sensor value change {self.train_sensor.value}')
+        distance = self.train_sensor.value[
+            VisionSensor.capability.sense_distance]
+        count = self.train_sensor.value[VisionSensor.capability.sense_count]
 
 
 async def system():
