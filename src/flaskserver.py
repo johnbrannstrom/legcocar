@@ -218,6 +218,17 @@ class RequestHandler:
                     mandatory_args=mandatory_args,
                     optional_args=optional_args)
 
+            # Handle gear change
+            elif (path == '/api/gearbox' and
+                  request.method == 'POST'):
+                mandatory_args = {}
+                optional_args = {'change_up': 'bool', 'change_down': 'bool',
+                                 'gear': 'int', 'speed': 'int',
+                                 'max_power': 'int', 'gear_positions': 'list'}
+                response = self._handle_api_request(
+                    mandatory_args=mandatory_args,
+                    optional_args=optional_args)
+
             # Handle indicators
             elif path == '/api/indicators' and request.method == 'POST':
                 mandatory_args = {'brightness': 'int'}
@@ -374,6 +385,7 @@ web_server.strict_slashes = False
 @web_server.route('/api/init', methods=['POST'])
 @web_server.route('/api/speed', methods=['POST'])
 @web_server.route('/api/steering', methods=['POST'])
+@web_server.route('/api/gearbox', methods=['POST'])
 @web_server.route('/api/headlights', methods=['POST'])
 @web_server.route('/api/high_beams', methods=['POST'])
 @web_server.route('/api/tail_lights', methods=['POST'])
