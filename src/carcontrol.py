@@ -57,19 +57,19 @@ connected_to_Lego = False
 #         port=0,
 #         capabilities=[('sense_speed', 5), 'sense_pos'])
 # Uncomment and change port to attach steering motor
-# @attach(CPlusLargeMotor,
-#         name='steering_motor',
-#         port=2,
-#         capabilities=['sense_pos'])
+@attach(CPlusLargeMotor,
+        name='steering_motor',
+        port=2,
+        capabilities=['sense_pos'])
 # Uncomment and change port to attach gear change motor
 @attach(CPlusLargeMotor,
         name='gear_change_motor',
-        port=2,
+        port=3,
         capabilities=['sense_pos'])
 # Uncomment and change port to attach left indicators
-@attach(Light,
-        name='left_indicators',
-        port=3)
+# @attach(Light,
+#         name='left_indicators',
+#         port=3)
 # Uncomment and change port to attach right indicators
 # @attach(Light,
 #         name='right_indicators',
@@ -106,7 +106,7 @@ class Car(CPlusHub):
         self._speed = 0
 
         # Steering
-        self._steering_pos = 0
+        self._steering_motor_pos = 0
         self._steering_max_left = None
         self._steering_max_right = None
 
@@ -115,6 +115,7 @@ class Car(CPlusHub):
         self._current_gear = 1
         self._gear_change_speed = 100
         self._gear_change_max_power = 100
+        self._gear_change_motor_pos = 0
 
         # Lights
         self._headlight_status = False
@@ -132,15 +133,11 @@ class Car(CPlusHub):
         :param body: Target "speed" command body.
 
         """
-        # Motor/car speed 0-100
-        self._speed = body['speed']
-
         # Set requested speed in motor(s)
-        await self.drive_motor1.set_speed(self._speed)
-        await self.drive_motor2.set_speed(self._speed)
+        await self.drive_motor1.set_speed(body['speed'])
+        await self.drive_motor2.set_speed(body['speed'])
         await sleep(2)
 
-    # TODO work in progress
     async def set_steering_position(self, body: dict):
         """
         Set car steering position.
@@ -148,27 +145,21 @@ class Car(CPlusHub):
         :param body: Target "steering" command body.
 
         """
-        pass
-        # # Set steering position in degrees
-        # # -90 = full left
-        # # 90 = full right
-        # self._steering_pos = body['position']
-        #
-        # # Steering speed
-        # speed = 10
-        # if 'speed' in body:
-        #     speed = body['speed']
-        #
-        # # Max percentage power that will be applied for steering (0-100%)
-        # max_power = 20
-        # if 'max_power' in body:
-        #     max_power = body['max_power']
-        #
-        # # Set requested position in steering motor
-        # await self.steering_motor.set_pos(pos=self._steering_pos,
-        #                                   speed=speed,
-        #                                   max_power=max_power)
-        # await sleep(2)
+        # Steering speed
+        speed = 10
+        if 'speed' in body:
+            speed = body['speed']
+
+        # Max percentage power that will be applied for steering (0-100%)
+        max_power = 20
+        if 'max_power' in body:
+            max_power = body['max_power']
+
+        # Set requested position in steering motor
+        await self.steering_motor.set_pos(pos=body['position'],
+                                          speed=speed,
+                                          max_power=max_power)
+        await sleep(2)
 
     # TODO work in progress
     async def change_gear(self, body: dict):
@@ -421,34 +412,20 @@ class Car(CPlusHub):
             self._right_indicator_status = False
 
     async def drive_motor1_change(self):
-        pass
-        # TODO uncomment?
-        # self._speed = self.drive_motor1.speed
-        # self._speed = (self._speed + self.drive_motor2.speed) // 2
+        self._speed = self.drive_motor1.speed
+        self._speed = (self._speed + self.drive_motor2.speed) // 2
 
     async def drive_motor2_change(self):
-        pass
-        # TODO uncomment?
-        # self._speed = self.drive_motor2.speed
-        # self._speed = (self._speed + self.drive_motor1.speed) // 2
+        self._speed = self.drive_motor2.speed
+        self._speed = (self._speed + self.drive_motor1.speed) // 2
 
     async def steering_motor_change(self):
-        # TODO work in progress
-        pass
-        # self.message_info(
-        #     f'Train sensor value change {self.train_sensor.value}')
-        # distance = self.train_sensor.value[
-        #     VisionSensor.capability.sense_distance]
-        # count = self.train_sensor.value[VisionSensor.capability.sense_count]
+        self._steering_pos = (
+            self.steering_motor.value[CPlusLargeMotor.capability.sense_pos])
 
     async def gear_change_motor_change(self):
-        # TODO work in progress
-        pass
-        # self.message_info(
-        #     f'Train sensor value change {self.train_sensor.value}')
-        # distance = self.train_sensor.value[
-        #     VisionSensor.capability.sense_distance]
-        # count = self.train_sensor.value[VisionSensor.capability.sense_count]
+        self._gear_change_motor_pos = (
+            self.gear_change_motor.value[CPlusLargeMotor.capability.sense_pos])
 
     async def run(self):
         """
