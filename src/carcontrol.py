@@ -106,16 +106,19 @@ class Car(CPlusHub):
         self._speed = 0
 
         # Steering
+        self._steering_pos = 0
         self._steering_motor_pos = 0
+        self._steering_speed = 10
+        self._steering_max_power = 20
         self._steering_max_left = None
         self._steering_max_right = None
 
         # Gearbox
         self._gear_positions = [0, 90, 180, 270]
+        self._gear_change_motor_pos = 0
         self._current_gear = 1
         self._gear_change_speed = 100
         self._gear_change_max_power = 100
-        self._gear_change_motor_pos = 0
 
         # Lights
         self._headlight_status = False
@@ -145,20 +148,21 @@ class Car(CPlusHub):
         :param body: Target "steering" command body.
 
         """
+        # Steering position
+        self._steering_pos = body['position']
+
         # Steering speed
-        speed = 10
         if 'speed' in body:
-            speed = body['speed']
+            self._steering_speed = body['speed']
 
         # Max percentage power that will be applied for steering (0-100%)
-        max_power = 20
         if 'max_power' in body:
-            max_power = body['max_power']
+            self._steering_max_power = body['max_power']
 
         # Set requested position in steering motor
-        await self.steering_motor.set_pos(pos=body['position'],
-                                          speed=speed,
-                                          max_power=max_power)
+        await self.steering_motor.set_pos(pos=self._steering_pos,
+                                          speed=self._steering_speed,
+                                          max_power=self._steering_max_power)
         await sleep(2)
 
     # TODO work in progress
@@ -185,7 +189,7 @@ class Car(CPlusHub):
         elif 'gear' in body and body['gear']:
             self._current_gear = body['gear']
 
-        # Set current gear position
+        # Get current gear position
         gear_position = self._gear_positions[self._current_gear-1]
 
         # Set gear change speed
@@ -420,12 +424,37 @@ class Car(CPlusHub):
         self._speed = (self._speed + self.drive_motor1.speed) // 2
 
     async def steering_motor_change(self):
-        self._steering_pos = (
+        # Get steering motor position
+        self._steering_motor_pos = (
             self.steering_motor.value[CPlusLargeMotor.capability.sense_pos])
 
+        # Correct steering motor position
+        precision = 2
+        if not (-precision <= self._steering_motor_pos - self._steering_pos <=
+                precision):
+            # Set steering motor position
+            await self.steering_motor.set_pos(
+                pos=self._steering_pos,
+                speed=self._steering_speed,
+                max_power=self._steering_max_power)
+            await sleep(2)
+
     async def gear_change_motor_change(self):
+        # Get gear change motor position
         self._gear_change_motor_pos = (
             self.gear_change_motor.value[CPlusLargeMotor.capability.sense_pos])
+
+        # Correct gear change motor position
+        precision = 2
+        gear_position = self._gear_positions[self._current_gear - 1]
+        if not (-precision <= self._gear_change_motor_pos - gear_position <=
+                precision):
+            # Set gear change motor position
+            await self.gear_change_motor.set_pos(
+                pos=gear_position,
+                speed=self._gear_change_speed,
+                max_power=self._gear_change_max_power)
+            await sleep(2)
 
     async def run(self):
         """
