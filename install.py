@@ -203,8 +203,7 @@ run_cmd('chown -R {PROJECT}:{PROJECT} /srv/{PROJECT}')
 run_cmd('chmod 755 /srv/{PROJECT}')
 
 # Restart apache2 for settings to take affect
-if not quick:
-    run_cmd('service apache2 restart')
+run_cmd('service apache2 restart')
 
 # Create rabbitMQ .erlang.cookie
 if not quick:

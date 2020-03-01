@@ -136,10 +136,12 @@ class Car(CPlusHub):
         :param body: Target "speed" command body.
 
         """
+        print("Set speed start")  # TODO delete
         # Set requested speed in motor(s)
         await self.drive_motor1.set_speed(body['speed'])
         await self.drive_motor2.set_speed(body['speed'])
         await sleep(2)
+        print("Set speed end")  # TODO delete
 
     async def set_steering_position(self, body: dict):
         """
@@ -416,45 +418,55 @@ class Car(CPlusHub):
             self._right_indicator_status = False
 
     async def drive_motor1_change(self):
-        self._speed = self.drive_motor1.speed
-        self._speed = (self._speed + self.drive_motor2.speed) // 2
+        pass  # TODO delete
+        # TODO uncomment
+        # self._speed = self.drive_motor1.speed
+        # self._speed = (self._speed + self.drive_motor2.speed) // 2
 
     async def drive_motor2_change(self):
-        self._speed = self.drive_motor2.speed
-        self._speed = (self._speed + self.drive_motor1.speed) // 2
+        pass  # TODO delete
+        # TODO uncomment
+        # self._speed = self.drive_motor2.speed
+        # self._speed = (self._speed + self.drive_motor1.speed) // 2
 
     async def steering_motor_change(self):
         # Get steering motor position
-        self._steering_motor_pos = (
-            self.steering_motor.value[CPlusLargeMotor.capability.sense_pos])
+        pass  # TODO delete
+        # TODO uncomment
+        # self._steering_motor_pos = (
+        #     self.steering_motor.value[CPlusLargeMotor.capability.sense_pos])
 
-        # Correct steering motor position
-        precision = 2
-        if not (-precision <= self._steering_motor_pos - self._steering_pos <=
-                precision):
-            # Set steering motor position
-            await self.steering_motor.set_pos(
-                pos=self._steering_pos,
-                speed=self._steering_speed,
-                max_power=self._steering_max_power)
-            await sleep(2)
+        # TODO uncomment
+        # # Correct steering motor position
+        # precision = 2
+        # if not (-precision <= self._steering_motor_pos - self._steering_pos <=
+        #         precision):
+        #     # Set steering motor position
+        #     await self.steering_motor.set_pos(
+        #         pos=self._steering_pos,
+        #         speed=self._steering_speed,
+        #         max_power=self._steering_max_power)
+        #     await sleep(2)
 
     async def gear_change_motor_change(self):
         # Get gear change motor position
-        self._gear_change_motor_pos = (
-            self.gear_change_motor.value[CPlusLargeMotor.capability.sense_pos])
+        pass  # TODO delete
+        # TODO uncomment
+        # self._gear_change_motor_pos = (
+        #     self.gear_change_motor.value[CPlusLargeMotor.capability.sense_pos])
 
-        # Correct gear change motor position
-        precision = 2
-        gear_position = self._gear_positions[self._current_gear - 1]
-        if not (-precision <= self._gear_change_motor_pos - gear_position <=
-                precision):
-            # Set gear change motor position
-            await self.gear_change_motor.set_pos(
-                pos=gear_position,
-                speed=self._gear_change_speed,
-                max_power=self._gear_change_max_power)
-            await sleep(2)
+        # TODO uncomment
+        # # Correct gear change motor position
+        # precision = 2
+        # gear_position = self._gear_positions[self._current_gear - 1]
+        # if not (-precision <= self._gear_change_motor_pos - gear_position <=
+        #         precision):
+        #     # Set gear change motor position
+        #     await self.gear_change_motor.set_pos(
+        #         pos=gear_position,
+        #         speed=self._gear_change_speed,
+        #         max_power=self._gear_change_max_power)
+        #     await sleep(2)
 
     async def run(self):
         """
@@ -464,7 +476,8 @@ class Car(CPlusHub):
         self.message_info("Running")
 
         while True:
-            self.message_info("looping")
+            self.message_info("looping")  # TODO delete
+            print("looping")  # TODO delete
             method_frame, header_frame, body = (
                 channel.basic_get(queue='to_lego'))
             if method_frame is not None:
