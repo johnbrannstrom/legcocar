@@ -51,12 +51,9 @@ def run_cmd(command: str, mode: str = 'status'):
         if var in command:
             command = command.replace(var, val)
 
-    # Print command if we are in regular mode
+    # Handle regular mode
     if mode.lower() == 'regular':
         print(command, flush=True)
-
-    # Run command
-    if mode == 'regular':
         with subprocess.Popen(command,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE,
@@ -65,22 +62,13 @@ def run_cmd(command: str, mode: str = 'status'):
                               universal_newlines=True) as p:
             for line in p.stdout:
                 print(line, end='', flush=True)
-        return None
+            for line in p.stderr:
+                print(line, end='', flush=True)
 
-    else:
+    # Handle status mode
+    elif mode == 'status':
         result = subprocess.run(command, shell=True,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    # Handle regular mode
-    if mode.lower() == 'regular':
-        stdout = result.stdout.decode('utf-8')
-        print(stdout, flush=True)
-        if result.returncode > 0:
-            stderr = result.stderr.decode('utf-8')
-            print(stderr, flush=True)
-
-    # Handle status mode and quiet mode
-    elif mode == 'status':
         if result.returncode == 0:
             status = '\033[1;32m OK  \033[0m'
             stderr = ''
@@ -94,6 +82,11 @@ def run_cmd(command: str, mode: str = 'status'):
                                              command=command,
                                              stderr=stderr)
         print(status_string, flush=True)
+
+    # Handle quiet mode
+    else:
+        subprocess.run(command, shell=True,
+                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
 # Parse command line arguments
