@@ -224,7 +224,7 @@ class RequestHandler:
                 mandatory_args = {}
                 optional_args = {'change_up': 'bool', 'change_down': 'bool',
                                  'gear': 'int', 'speed': 'int',
-                                 'max_power': 'int', 'gear_positions': 'list'}
+                                 'max_power': 'int', 'gear_offset': 'int'}
                 response = self._handle_api_request(
                     mandatory_args=mandatory_args,
                     optional_args=optional_args)

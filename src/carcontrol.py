@@ -114,7 +114,7 @@ class Car(CPlusHub):
         self._steering_max_right = None
 
         # Gearbox
-        self._gear_positions = [0, 90, 180, 270]
+        self._gear_offset = [0, 80, 160, 240]
         self._gear_change_motor_pos = 0
         self._current_gear = 1
         self._gear_change_speed = 100
@@ -176,23 +176,23 @@ class Car(CPlusHub):
 
         """
         # Set change gear motor gear positions
-        if 'gear_positions' in body:
-            self._gear_positions = body['gear_positions']
+        if 'gear_offset' in body:
+            self._gear_offset = body['gear_offset']   # TODO change here
 
         # Set current gear
         if 'change_up' in body and body['change_up']:
             self._current_gear += 1
-            if self._current_gear >= len(self._gear_positions):
+            if self._current_gear >= len(self._gear_offset):   # TODO change here
                 self._current_gear = 1
         elif 'change_down' in body and body['change_down']:
             self._current_gear -= 1
             if self._current_gear < 0:
-                self._current_gear = len(self._gear_positions)
+                self._current_gear = len(self._gear_offset)   # TODO change here
         elif 'gear' in body and body['gear']:
             self._current_gear = body['gear']
 
         # Get current gear position
-        next_gear_position = self._gear_positions[self._current_gear-1]
+        next_gear_position = self._gear_offset[self._current_gear-1]   # TODO change here
 
         # Set gear change speed
         if 'speed' in body:
@@ -202,10 +202,11 @@ class Car(CPlusHub):
         if 'max_power' in body:
             self._gear_change_max_power = body['max_power']
 
-        # Set requested position in steering motor TODO here
+        # TODO work in progress here
+        # Set requested position in steering motor
         set_position = next_gear_position - self._gear_change_motor_pos
         await self.gear_change_motor.set_pos(
-            pos=gear_position,
+            pos=set_position,
             speed=self._gear_change_speed,
             max_power=self._gear_change_max_power)
         await sleep(2)
@@ -445,11 +446,11 @@ class Car(CPlusHub):
     async def gear_change_motor_change(self):
         # Get gear change motor position
         self._gear_change_motor_pos = (
-        self.gear_change_motor.value[CPlusLargeMotor.capability.sense_pos])
+            self.gear_change_motor.value[CPlusLargeMotor.capability.sense_pos])
 
         # Correct gear change motor position
         precision = 2
-        gear_position = self._gear_positions[self._current_gear - 1]
+        gear_position = self._gear_offset[self._current_gear - 1]   # TODO change here
         if not (-precision <= self._gear_change_motor_pos - gear_position <=
                 precision):
             # Set gear change motor position
