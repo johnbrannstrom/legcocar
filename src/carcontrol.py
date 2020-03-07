@@ -116,11 +116,11 @@ class Car(CPlusHub):
         # Gearbox
         self._gear_adjust = 0
         self._gear_offset = 67.5
-        self._gear_number = 4
+        self._gear_number = 3
         self._gear_change_motor_pos = 0
         self._current_gear = 1
-        self._gear_change_speed = 50
-        self._gear_change_max_power = 80
+        self._gear_change_speed = 100
+        self._gear_change_max_power = 100
 
         # Lights
         self._headlight_status = False
@@ -139,8 +139,20 @@ class Car(CPlusHub):
 
         """
         # Set requested speed in motor(s)
-        await self.drive_motor1.set_speed(body['speed'])
-        await self.drive_motor2.set_speed(body['speed'])
+        speed = body['speed']
+        await self._set_speed(speed=speed)
+        await sleep(2)
+
+    async def _set_speed(self, speed: int):
+        """
+        Set car speed.
+
+        :param speed: Target speed from -100 to 100.
+
+        """
+        # Set requested speed in motor(s)
+        await self.drive_motor1.set_speed(speed)
+        await self.drive_motor2.set_speed(-speed)
         await sleep(2)
 
     async def set_steering_position(self, body: dict):
@@ -167,7 +179,6 @@ class Car(CPlusHub):
                                           max_power=self._steering_max_power)
         await sleep(2)
 
-    # TODO work in progress
     async def change_gear(self, body: dict):
         """
         Set gearbox current gear.
@@ -186,6 +197,14 @@ class Car(CPlusHub):
         # Set adjust
         if 'adjust' in body:
             self._gear_adjust = body['adjust']
+
+        # Set gear change speed
+        if 'speed' in body:
+            self._gear_change_speed = body['speed']
+
+        # Max percentage power that will be applied for gear change (0-100%)
+        if 'max_power' in body:
+            self._gear_change_max_power = body['max_power']
 
         gear_position = int(self._gear_offset * (self._current_gear - 1))
         gear_position += self._gear_adjust
@@ -215,20 +234,21 @@ class Car(CPlusHub):
             gear_position = int(self._gear_offset * body['gear'])
             gear_position += self._gear_adjust
 
-        # Set gear change speed
-        if 'speed' in body:
-            self._gear_change_speed = body['speed']
-
-        # Max percentage power that will be applied for gear change (0-100%)
-        if 'max_power' in body:
-            self._gear_change_max_power = body['max_power']
+        # Set speed to 0
+        drive_speed = self._speed
+        await self._set_speed(speed=0)
+        await sleep(2)
 
         # Set requested position in gear change motor
         await self.gear_change_motor.set_pos(
             pos=gear_position,
             speed=self._gear_change_speed,
             max_power=self._gear_change_max_power)
-        await sleep(2)
+        await sleep(4)
+
+        # Restore speed
+        await self._set_speed(speed=drive_speed)
+        await sleep(10)
 
     async def set_headlight_brightness(self, body: dict):
         """
