@@ -18,6 +18,7 @@ import re
 
 # Third party modules
 from flask import Flask, render_template, request, Response
+from json import JSONDecodeError
 import pika
 
 
@@ -35,6 +36,7 @@ class RequestHandler:
         """
         Parse request arguments
 
+        :param path: HTTP request path.
         :rtype:  json
         :return: Arguments.
 
@@ -45,7 +47,11 @@ class RequestHandler:
                 for key in request.form.keys():
                     args[key] = request.form.get(key)
             else:
-                args = request.get_json()
+                try:
+                    args = json.loads(request.data)
+                except JSONDecodeError as e:
+                    raise HttpRequestInvalidJsonError(path=request.path,
+                                                      json_error=str(e))
         else:
             for key in request.args.keys():
                 args[key] = request.args.getlist(key)
@@ -203,8 +209,9 @@ class RequestHandler:
                    path == '/api/brake_lights' or
                    path == '/api/reverse_lights')
                   and request.method == 'POST'):
-                mandatory_args = {'brightness': 'int'}
-                optional_args = {'duration': 'int'}
+                mandatory_args = {}
+                optional_args = {'brightness': 'int',
+                                 'duration': 'int'}
                 response = self._handle_api_request(
                     mandatory_args=mandatory_args,
                     optional_args=optional_args)
@@ -212,8 +219,10 @@ class RequestHandler:
             # Handle steering position
             elif (path == '/api/steering' and
                   request.method == 'POST'):
-                mandatory_args = {'position': 'int'}
-                optional_args = {'speed': 'int', 'max_power': 'int'}
+                mandatory_args = {}
+                optional_args = {'position': 'int',
+                                 'speed': 'int',
+                                 'max_power': 'int'}
                 response = self._handle_api_request(
                     mandatory_args=mandatory_args,
                     optional_args=optional_args)
@@ -222,17 +231,23 @@ class RequestHandler:
             elif (path == '/api/gearbox' and
                   request.method == 'POST'):
                 mandatory_args = {}
-                optional_args = {'change_up': 'bool', 'change_down': 'bool',
-                                 'gear': 'int', 'speed': 'int',
-                                 'max_power': 'int', 'gear_offset': 'int'}
+                optional_args = {'change_up': 'bool',
+                                 'change_down': 'bool',
+                                 'gear_number': 'int',
+                                 'gear': 'int',
+                                 'speed': 'int',
+                                 'max_power': 'int',
+                                 'adjust': 'int',
+                                 'offset': 'float'}
                 response = self._handle_api_request(
                     mandatory_args=mandatory_args,
                     optional_args=optional_args)
 
             # Handle indicators
             elif path == '/api/indicators' and request.method == 'POST':
-                mandatory_args = {'brightness': 'int'}
-                optional_args = {'duration': 'int',
+                mandatory_args = {}
+                optional_args = {'brightness': 'int',
+                                 'duration': 'int',
                                  'length': 'float',
                                  'interval': 'float',
                                  'left': 'bool',
@@ -317,6 +332,22 @@ class HttpRequestInvalidArgumentError(HttpRequestError):
         message = ("Invalid arguments in HTTP request '{path}'. The following "
                    "arguments are invalid: {args}")
         self._message = message.format(path=path, args=', '.join(args))
+
+
+class HttpRequestInvalidJsonError(HttpRequestError):
+    """Error for malformed HTTP requests."""
+
+    # noinspection PyShadowingNames
+    def __init__(self, path: str, json_error: str):
+        """
+        Constructor function.
+
+        :param path:       Target path that caused the error.
+        :param json_error: Json parse error message.
+
+        """
+        message = "Invalid json in HTTP request '{path}'. {json_error}"
+        self._message = message.format(path=path, json_error=json_error)
 
 
 class HttpRequestArgumentTypeError(HttpRequestError):
